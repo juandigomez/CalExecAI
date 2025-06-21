@@ -30,7 +30,7 @@ A console-based AI calendar assistant built with Autogen that helps manage your 
 2. Create and activate a virtual environment
 3. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
 4. Create a `.env` file with your MCP server details
 
