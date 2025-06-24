@@ -1,4 +1,5 @@
 """Main entry point for the AI Calendar Assistant."""
+
 import os
 import asyncio
 import argparse
@@ -13,7 +14,7 @@ import mcp
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from autogen import LLMConfig
-from autogen.agentchat import AssistantAgent
+from autogen.agentchat import ConversableAgent
 from autogen.mcp import create_toolkit
 from fastmcp import Client
 
@@ -21,12 +22,7 @@ from fastmcp import Client
 load_dotenv()
 
 # Configure logging
-config_list = [
-    {
-        'model': 'gpt-4',
-        'api_key': os.getenv('OPENAI_API_KEY')
-    }
-]
+config_list = [{"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}]
 
 # Define agent configurations
 llm_config = {
@@ -35,7 +31,7 @@ llm_config = {
 }
 
 # Create the calendar assistant agent
-calendar_assistant = AssistantAgent(
+calendar_assistant = ConversableAgent(
     name="Calendar_Assistant",
     system_message="""You are a helpful AI calendar assistant. Your role is to help users manage their 
     calendar through natural language. You can create, update, delete, and view calendar events. 
@@ -53,31 +49,27 @@ calendar_assistant = AssistantAgent(
     is_termination_msg=lambda msg: msg == "exit",
 )
 
+
 async def main(debug=False):
 
     async with Client(calendar_service) as client:
-        tools = await client.list_tools()
-        resources = await client.list_resources()
-        resource_templates = await client.list_resource_templates()
-        print(f"Available tools: {tools}")
-        print(f"Available resources: {resources}")
-        print(f"Available resource templates: {resource_templates}")
+        session = client.session
+        await session.initialize()
 
-        await client.session.initialize()
-        toolkit = await create_toolkit(session=client.session)
+        toolkit = await create_toolkit(session=session)
         toolkit.register_for_llm(calendar_assistant)
-
+        toolkit.register_for_execution(calendar_assistant)
 
         if debug:
             from pydantic.networks import AnyUrl
-            results = await client.session.read_resource(
-                uri=AnyUrl("events://future/1")
-            )
+
+            results = await session.read_resource(uri=AnyUrl("events://future/1"))
             print(results)
         else:
             response = await calendar_assistant.a_run(
-                message="",
-                user_input=True,
+                message="What is my next appointment?",
+                user_input=False,
+                max_turns=2,
                 tools=toolkit.tools,
             )
             await response.process()
@@ -87,13 +79,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     args = parser.parse_args()
-    required_vars = ['OPENAI_API_KEY', 'MCP_SERVER_URL', 'MCP_API_KEY']
+    required_vars = ["OPENAI_API_KEY", "MCP_SERVER_URL", "MCP_API_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
+
     if missing_vars:
         print("Error: The following required environment variables are missing:")
         for var in missing_vars:
             print(f"- {var}")
-        print("\nPlease create a .env file with these variables or set them in your environment.")
+        print(
+            "\nPlease create a .env file with these variables or set them in your environment."
+        )
     else:
         asyncio.run(main(args.debug), debug=True)

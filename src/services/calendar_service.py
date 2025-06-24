@@ -1,4 +1,5 @@
 """Calendar service for interacting with the MCP server."""
+
 import os
 import argparse
 import datetime
@@ -30,9 +31,7 @@ def authenticate():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
-            )
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open("token.json", "w") as token:
@@ -43,52 +42,53 @@ def authenticate():
 @mcp.resource(
     uri="events://future/{limit}",
     # mime_type="application/json"
-    )
+)
 def get_upcoming_events(limit: int):
-        """Retrieve upcoming events.
-        
-        Args:
-            limit: Number of events to retrieve
-            
-        Returns:
-            List of calendar events
-        """
-        service = build("calendar", "v3", credentials=authenticate())
+    """Retrieve upcoming events.
 
-        # Call the Calendar API
-        events = (
-            service.events()
-            .list(
-                calendarId="primary",
-                timeMin=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-                maxResults=limit,
-                singleEvents=True,
-                orderBy="startTime",
-            )
-            .execute()
-        ).get("items", [])
+    Args:
+        limit: Number of events to retrieve
 
-        # TODO: Make a Pydantic model for events, and parse our events with it
-        events = [
-            {
-                "id": event["id"],
-                "status": event["status"],
-                "htmlLink": event["htmlLink"],
-                "summary": event["summary"],
-                # "description": event["description"],
-                "start_time": event["start"]["dateTime"],
-                "end_time": event["end"]["dateTime"],
-            }
-            for event in events
-        ]
+    Returns:
+        List of calendar events
+    """
+    service = build("calendar", "v3", credentials=authenticate())
 
-        return {
-             "events": events
+    # Call the Calendar API
+    events = (
+        service.events()
+        .list(
+            calendarId="primary",
+            timeMin=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            maxResults=limit,
+            singleEvents=True,
+            orderBy="startTime",
+        )
+        .execute()
+    ).get("items", [])
+
+    # TODO: Make a Pydantic model for events, and parse our events with it
+    events = [
+        {
+            "id": event["id"],
+            "status": event["status"],
+            "htmlLink": event["htmlLink"],
+            "summary": event["summary"],
+            # "description": event["description"],
+            "start_time": event["start"]["dateTime"],
+            "end_time": event["end"]["dateTime"],
         }
+        for event in events
+    ]
+
+    return events
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCP Server")
-    parser.add_argument("transport", choices=["stdio", "sse"], help="Transport mode (stdio or sse)")
+    parser.add_argument(
+        "transport", choices=["stdio", "sse"], help="Transport mode (stdio or sse)"
+    )
     args = parser.parse_args()
 
     mcp.run(transport=args.transport)
