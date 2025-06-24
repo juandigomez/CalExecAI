@@ -1,6 +1,7 @@
 """Main entry point for the AI Calendar Assistant."""
 import os
 import asyncio
+import argparse
 import json
 import autogen
 from dotenv import load_dotenv
@@ -52,7 +53,8 @@ calendar_assistant = AssistantAgent(
     is_termination_msg=lambda msg: msg == "exit",
 )
 
-async def main():
+async def main(debug=False):
+
     async with Client(calendar_service) as client:
         tools = await client.list_tools()
         resources = await client.list_resources()
@@ -64,20 +66,27 @@ async def main():
         await client.session.initialize()
         toolkit = await create_toolkit(session=client.session)
         toolkit.register_for_llm(calendar_assistant)
-        
-        print("\n🤖 Welcome to your AI Calendar Assistant!")
-        print("Type 'exit' to end the session.\n")
 
-        response = calendar_assistant.run(
-            message="",
-            user_input=True,
-            tools=toolkit.tools,
-        )
-        response.process()
-        print(response.messages)
+
+        if debug:
+            from pydantic.networks import AnyUrl
+            results = await client.session.read_resource(
+                uri=AnyUrl("events://future/1")
+            )
+            print(results)
+        else:
+            response = await calendar_assistant.a_run(
+                message="",
+                user_input=True,
+                tools=toolkit.tools,
+            )
+            await response.process()
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    args = parser.parse_args()
     required_vars = ['OPENAI_API_KEY', 'MCP_SERVER_URL', 'MCP_API_KEY']
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
@@ -87,4 +96,4 @@ if __name__ == "__main__":
             print(f"- {var}")
         print("\nPlease create a .env file with these variables or set them in your environment.")
     else:
-        asyncio.run(main())
+        asyncio.run(main(args.debug), debug=True)

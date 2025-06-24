@@ -1,5 +1,6 @@
 """Calendar service for interacting with the MCP server."""
 import os
+import argparse
 import datetime
 from typing import Dict, List, Callable, Optional
 
@@ -39,8 +40,11 @@ def authenticate():
     return creds
 
 
-@mcp.resource("resource://events/upcoming/{limit}")
-def get_upcoming_events(limit: int) -> List[Optional[Dict]]:
+@mcp.resource(
+    uri="events://future/{limit}",
+    # mime_type="application/json"
+    )
+def get_upcoming_events(limit: int):
         """Retrieve upcoming events.
         
         Args:
@@ -49,28 +53,42 @@ def get_upcoming_events(limit: int) -> List[Optional[Dict]]:
         Returns:
             List of calendar events
         """
-        try:
-            service = build("calendar", "v3", credentials=authenticate())
+        service = build("calendar", "v3", credentials=authenticate())
 
-            # Call the Calendar API
-            now = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-            events_result = (
-                service.events()
-                .list(
-                    calendarId="primary",
-                    timeMin=now,
-                    maxResults=limit,
-                    singleEvents=True,
-                    orderBy="startTime",
-                )
-                .execute()
+        # Call the Calendar API
+        events = (
+            service.events()
+            .list(
+                calendarId="primary",
+                timeMin=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                maxResults=limit,
+                singleEvents=True,
+                orderBy="startTime",
             )
-            events = events_result.get("items", [])
+            .execute()
+        ).get("items", [])
 
-            if not events:
-                return []
+        # TODO: Make a Pydantic model for events, and parse our events with it
+        events = [
+            {
+                "id": event["id"],
+                "status": event["status"],
+                "htmlLink": event["htmlLink"],
+                "summary": event["summary"],
+                # "description": event["description"],
+                "start_time": event["start"]["dateTime"],
+                "end_time": event["end"]["dateTime"],
+            }
+            for event in events
+        ]
 
-            return events
+        return {
+             "events": events
+        }
 
-        except HttpError as error:
-            raise ResourceError(f"An error occurred: {error}")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="MCP Server")
+    parser.add_argument("transport", choices=["stdio", "sse"], help="Transport mode (stdio or sse)")
+    args = parser.parse_args()
+
+    mcp.run(transport=args.transport)
