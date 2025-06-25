@@ -1,103 +1,94 @@
 """Calendar service for interacting with the MCP server."""
+
 import os
-from typing import Dict, List, Optional
-import requests
-from dotenv import load_dotenv
+import argparse
+import datetime
+from typing import Dict, List, Callable, Optional
 
-load_dotenv()
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from fastmcp import FastMCP
+from fastmcp.exceptions import ResourceError
 
-class CalendarService:
-    """Handles calendar operations with the MCP server."""
-    
-    def __init__(self):
-        """Initialize the calendar service with MCP server configuration."""
-        self.base_url = os.getenv("MCP_SERVER_URL")
-        self.api_key = os.getenv("MCP_API_KEY")
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+# If modifying these scopes, delete the file token.json.
+SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+mcp = FastMCP("Calendar Management Service")
+
+
+def authenticate():
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open("token.json", "w") as token:
+            token.write(creds.to_json())
+    return creds
+
+
+@mcp.resource(
+    uri="events://future/{limit}",
+    # mime_type="application/json"
+)
+def get_upcoming_events(limit: int):
+    """Retrieve upcoming events.
+
+    Args:
+        limit: Number of events to retrieve
+
+    Returns:
+        List of calendar events
+    """
+    service = build("calendar", "v3", credentials=authenticate())
+
+    # Call the Calendar API
+    events = (
+        service.events()
+        .list(
+            calendarId="primary",
+            timeMin=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            maxResults=limit,
+            singleEvents=True,
+            orderBy="startTime",
+        )
+        .execute()
+    ).get("items", [])
+
+    # TODO: Make a Pydantic model for events, and parse our events with it
+    events = [
+        {
+            "id": event["id"],
+            "status": event["status"],
+            "htmlLink": event["htmlLink"],
+            "summary": event["summary"],
+            # "description": event["description"],
+            "start_time": event["start"]["dateTime"],
+            "end_time": event["end"]["dateTime"],
         }
-    
-    def get_events(self, start_date: str, end_date: str) -> List[Dict]:
-        """Retrieve events within a date range.
-        
-        Args:
-            start_date: Start date in ISO format (YYYY-MM-DD)
-            end_date: End date in ISO format (YYYY-MM-DD)
-            
-        Returns:
-            List of calendar events
-        """
-        try:
-            response = requests.get(
-                f"{self.base_url}/events",
-                params={"start_date": start_date, "end_date": end_date},
-                headers=self.headers
-            )
-            response.raise_for_status()
-            return response.json().get("events", [])
-        except requests.RequestException as e:
-            print(f"Error fetching events: {e}")
-            return []
-    
-    def create_event(self, event_data: Dict) -> Optional[Dict]:
-        """Create a new calendar event.
-        
-        Args:
-            event_data: Dictionary containing event details
-            
-        Returns:
-            Created event data if successful, None otherwise
-        """
-        try:
-            response = requests.post(
-                f"{self.base_url}/events",
-                json=event_data,
-                headers=self.headers
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            print(f"Error creating event: {e}")
-            return None
-    
-    def update_event(self, event_id: str, updates: Dict) -> Optional[Dict]:
-        """Update an existing calendar event.
-        
-        Args:
-            event_id: ID of the event to update
-            updates: Dictionary containing fields to update
-            
-        Returns:
-            Updated event data if successful, None otherwise
-        """
-        try:
-            response = requests.patch(
-                f"{self.base_url}/events/{event_id}",
-                json=updates,
-                headers=self.headers
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            print(f"Error updating event: {e}")
-            return None
-    
-    def delete_event(self, event_id: str) -> bool:
-        """Delete a calendar event.
-        
-        Args:
-            event_id: ID of the event to delete
-            
-        Returns:
-            True if deletion was successful, False otherwise
-        """
-        try:
-            response = requests.delete(
-                f"{self.base_url}/events/{event_id}",
-                headers=self.headers
-            )
-            return response.status_code == 204
-        except requests.RequestException as e:
-            print(f"Error deleting event: {e}")
-            return False
+        for event in events
+    ]
+
+    return events
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="MCP Server")
+    parser.add_argument(
+        "transport", choices=["stdio", "sse"], help="Transport mode (stdio or sse)"
+    )
+    args = parser.parse_args()
+
+    mcp.run(transport=args.transport)
