@@ -48,6 +48,11 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+
+# Google API credentials
+*.json
+credentials.json
+token.json
 .pytest_cache/
 cover/
 
