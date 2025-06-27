@@ -75,8 +75,8 @@ def get_upcoming_events(limit: int):
             "htmlLink": event["htmlLink"],
             "summary": event["summary"],
             # "description": event["description"],
-            "start_time": event["start"]["dateTime"],
-            "end_time": event["end"]["dateTime"],
+            "start_time": event.get("start").get("dateTime"),
+            "end_time": event.get("end").get("dateTime"),
         }
         for event in events
     ]
