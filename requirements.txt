@@ -4,3 +4,7 @@ pytest~=7.0.0
 pytest-mock~=3.10.0
 openai~=1.0.0
 fastmcp~=2.9
+google-auth~=2.40.3
+google-auth-oauthlib~=1.2.2
+google-auth-httplib2~=0.2.0
+google-api-python-client~=2.174.0
