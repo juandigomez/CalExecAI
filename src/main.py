@@ -30,63 +30,24 @@ llm_config = {
     "timeout": 120,
 }
 
-summary_agent = ConversableAgent(
-    name="SummaryAgent",
-    system_message="""You are a helpful AI calendar assistant. Your role is to help users manage their 
+assistant_agent = ConversableAgent(
+    name="AssistantAgent",
+    system_message="""
+    You are a helpful AI calendar assistant. Your role is to help users manage their 
     calendar through natural language. You can view calendar events. 
     Always be polite and confirm actions with the user before making any changes to their calendar.
     
-    Available functions:
-    - get_events(start_date: str, end_date: str) -> List[Dict]: Get events within a date range
-    - For creating, updating, and deleting events, defer to the CreationAgent
-    - After taking an action or deferring to another agent, conclude your response by stating if the task is complete or more help is needed.
-    
     When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
-    the user's schedule or preferences without asking first.""",
-    llm_config=llm_config,
-)
-
-# Create the calendar assistant agent
-invite_agent = ConversableAgent(
-    name="InviteAgent",
-    system_message="""You are a helpful AI calendar assistant. Your role is to help users manage their 
-    calendar through natural language. You can send invitations to events. 
-    Always be polite and confirm actions with the user before making any changes to their calendar.
-    
-    Available functions:
-    - invite_to_event(event_id: str, invitees: List[str]) -> bool: Invite people to an event
-    - For getting event information, defer to the SummaryAgent
-    - For creating, updating, and deleting events, defer to the CreationAgent
-    - After taking an action or deferring to another agent, conclude your response by stating if the task is complete or more help is needed.
-    
-    When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
-    the user's schedule or preferences without asking first.""",
-    llm_config=llm_config,
-)
-
-# Create the calendar assistant agent
-creation_agent = ConversableAgent(
-    name="CreationAgent",
-    system_message="""You are a helpful AI calendar assistant. Your role is to help users manage their 
-    calendar through natural language. You can create, update, and delete calendar events. 
-    Always be polite and confirm actions with the user before making any changes to their calendar.
-    
-    Available functions:
-    - create_event(event_data: Dict) -> Optional[Dict]: Create a new event
-    - update_event(event_id: str, updates: Dict) -> Optional[Dict]: Update an existing event
-    - delete_event(event_id: str) -> bool: Delete an event
-    - For getting event information, defer to the SummaryAgent
-    - After taking an action or deferring to another agent, conclude your response by stating if the task is complete or more help is needed.
-    
-    When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
-    the user's schedule or preferences without asking first.""",
+    the user's schedule or preferences without asking first.
+    """,
     llm_config=llm_config,
 )
 
 user_proxy = UserProxyAgent(
-    name="ExecutionAgent",
+    name="UserProxy",
     human_input_mode="NEVER",
     llm_config=False,
+    code_execution_config=False
 )
 
 async def main(debug=False):
@@ -96,16 +57,18 @@ async def main(debug=False):
         await session.initialize()
 
         toolkit = await create_toolkit(session=session)
-        toolkit.register_for_llm(creation_agent)
-        toolkit.register_for_llm(summary_agent)
-        toolkit.register_for_llm(invite_agent)
+        toolkit.register_for_llm(assistant_agent)
         toolkit.register_for_execution(user_proxy)
 
         # Create Group Chat with all agents
         groupchat = GroupChat(
-            agents=[user_proxy, creation_agent, summary_agent, invite_agent],
+            agents=[
+                assistant_agent,
+                user_proxy,
+            ],
             messages=[],
             max_round=5, # Allow more rounds for complex conversations
+            speaker_selection_method="round_robin",
         )
 
         # Create Group Chat Manager
