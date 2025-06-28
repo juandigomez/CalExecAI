@@ -4,12 +4,20 @@ import os
 import asyncio
 import argparse
 from dotenv import load_dotenv
-from .services.calendar_service import mcp as calendar_service
-from autogen.agentchat import AssistantAgent,ConversableAgent, UserProxyAgent, GroupChat, GroupChatManager
-from autogen.mcp import create_toolkit
+
 from fastmcp import Client
+
+from autogen import (
+    AssistantAgent,
+    ConversableAgent,
+    GroupChat,
+    GroupChatManager,
+    register_function,
+)
+from autogen.mcp import create_toolkit
+
 from .tools.datetime import get_current_datetime
-from autogen import register_function
+from .services.calendar_service import mcp as calendar_service
 
 # Load environment variables first
 load_dotenv()
@@ -59,11 +67,17 @@ register_function(
     get_current_datetime,
     caller=assistant_agent,
     executor=execution_agent,
-    description=get_current_datetime.__doc__ if get_current_datetime.__doc__ else "Get the current date and time.",
+    description=(
+        get_current_datetime.__doc__
+        if get_current_datetime.__doc__
+        else "Get the current date and time."
+    ),
 )
+
 
 async def async_input(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
+
 
 async def main(debug=False):
 
@@ -87,11 +101,11 @@ async def main(debug=False):
             ],
             messages=[],
             speaker_selection_method="auto",
-            max_round=5
+            max_round=5,
         )
 
         # Create Group Chat Manager
-        manager = GroupChatManager(
+        groupchat_manager = GroupChatManager(
             groupchat=groupchat,
             llm_config=llm_config,
         )
@@ -106,8 +120,8 @@ async def main(debug=False):
             try:
                 # Initiate the chat with the manager
                 await user_proxy.a_initiate_chat(
-                    manager,
-                    message=user_input, # Limit conversation turns to avoid excessive back-and-forth
+                    groupchat_manager,
+                    message=user_input,
                 )
             except Exception as e:
                 print(f"🔹 Error: {e}. Please try again.")
