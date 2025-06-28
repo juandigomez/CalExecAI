@@ -3,20 +3,13 @@
 import os
 import asyncio
 import argparse
-import json
-import autogen
 from dotenv import load_dotenv
-from typing import Dict, Any
 from .services.calendar_service import mcp as calendar_service
-from .services.calendar_service import get_upcoming_events
-
-import mcp
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from autogen import LLMConfig
 from autogen.agentchat import AssistantAgent,ConversableAgent, UserProxyAgent, GroupChat, GroupChatManager
 from autogen.mcp import create_toolkit
 from fastmcp import Client
+from .tools.datetime import get_current_datetime
+from autogen import register_function
 
 # Load environment variables first
 load_dotenv()
@@ -36,28 +29,37 @@ assistant_agent = ConversableAgent(
     You are a helpful AI calendar assistant. Your role is to help users manage their 
     calendar through natural language. You can view calendar events. 
     Always be polite and confirm actions with the user before making any changes to their calendar.
+    If you're wondering what day it is, use the get_current_datetime function.
 
     - When using a tool, defer to the ExecutionAgent.
     
     When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
     the user's schedule or preferences without asking first. When you are done, let the user know.
     """,
-    llm_config=llm_config,    
+    llm_config=llm_config,
 )
 
 execution_agent = AssistantAgent(
     name="ExecutionAgent",
     system_message="""
-    You are a helpful AI calendar assistant. Your role is to execute the given tools.
+    Your role is to execute the tools that are suggested to you, and return the results.
+    You communicate with the Assistant Agent, so that they can summarize the results of your tool calls.
     """,
-    llm_config=llm_config,    
+    llm_config=llm_config,
 )
 
-user_proxy = UserProxyAgent(
+user_proxy = ConversableAgent(
     name="UserProxy",
     human_input_mode="ALWAYS",
     llm_config=False,
     code_execution_config=False,
+)
+
+register_function(
+    get_current_datetime,
+    caller=assistant_agent,
+    executor=execution_agent,
+    description=get_current_datetime.__doc__ if get_current_datetime.__doc__ else "Get the current date and time.",
 )
 
 async def async_input(prompt: str = "") -> str:
@@ -84,8 +86,8 @@ async def main(debug=False):
                 user_proxy,
             ],
             messages=[],
-            speaker_selection_method="round_robin",
-            max_round=20
+            speaker_selection_method="auto",
+            max_round=5
         )
 
         # Create Group Chat Manager
