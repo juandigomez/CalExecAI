@@ -17,12 +17,14 @@ from autogen import LLMConfig
 from autogen.agentchat import AssistantAgent,ConversableAgent, UserProxyAgent, GroupChat, GroupChatManager
 from autogen.mcp import create_toolkit
 from fastmcp import Client
+from mem0 import MemoryClient
 
 # Load environment variables first
 load_dotenv()
 
 # Configure logging
 config_list = [{"model": "gpt-4.1-mini", "api_key": os.getenv("OPENAI_API_KEY")}]
+memory_client = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
 
 # Define agent configurations
 llm_config = {
@@ -62,6 +64,12 @@ user_proxy = UserProxyAgent(
 
 async def async_input(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
+
+async def log_conversation_to_mem0(memory_client, message: Dict[str, Any]):
+    # Save each message with metadata
+    memory_client.add(
+        messages=[message],
+        user_id="user")
 
 async def main(debug=False):
 
@@ -107,6 +115,9 @@ async def main(debug=False):
                     manager,
                     message=user_input, # Limit conversation turns to avoid excessive back-and-forth
                 )
+
+                for msg in groupchat.messages:
+                    await log_conversation_to_mem0(memory_client, msg)
             except Exception as e:
                 print(f"🔹 Error: {e}. Please try again.")
 
