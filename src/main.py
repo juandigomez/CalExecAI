@@ -3,67 +3,28 @@
 import os
 import asyncio
 import argparse
-import json
-import autogen
 from dotenv import load_dotenv
-from typing import Dict, Any
-from .services.calendar_service import mcp as calendar_service
-from .services.calendar_service import get_upcoming_events
 
-import mcp
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from autogen import LLMConfig
-from autogen.agentchat import AssistantAgent,ConversableAgent, UserProxyAgent, GroupChat, GroupChatManager
-from autogen.mcp import create_toolkit
 from fastmcp import Client
+
+from autogen import (
+    GroupChat,
+    GroupChatManager,
+)
+from autogen.mcp import create_toolkit
+
+from .llms import llm_config
+from .agents import assistant_agent, execution_agent, user_proxy
+from .services.calendar_service import mcp as calendar_service
 from mem0 import MemoryClient
 
 # Load environment variables first
 load_dotenv()
 
-# Configure logging
-config_list = [{"model": "gpt-4.1-mini", "api_key": os.getenv("OPENAI_API_KEY")}]
-memory_client = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
-
-# Define agent configurations
-llm_config = {
-    "config_list": config_list,
-    "timeout": 120,
-}
-
-assistant_agent = ConversableAgent(
-    name="AssistantAgent",
-    system_message="""
-    You are a helpful AI calendar assistant. Your role is to help users manage their 
-    calendar through natural language. You can view calendar events. 
-    Always be polite and confirm actions with the user before making any changes to their calendar.
-
-    - When using a tool, defer to the ExecutionAgent.
-    
-    When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
-    the user's schedule or preferences without asking first. When you are done, let the user know.
-    """,
-    llm_config=llm_config,    
-)
-
-execution_agent = AssistantAgent(
-    name="ExecutionAgent",
-    system_message="""
-    You are a helpful AI calendar assistant. Your role is to execute the given tools.
-    """,
-    llm_config=llm_config,    
-)
-
-user_proxy = UserProxyAgent(
-    name="UserProxy",
-    human_input_mode="ALWAYS",
-    llm_config=False,
-    code_execution_config=False,
-)
 
 async def async_input(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
+
 
 async def log_conversation_to_mem0(memory_client, message: Dict[str, Any]):
     # Save each message with metadata
@@ -73,6 +34,23 @@ async def log_conversation_to_mem0(memory_client, message: Dict[str, Any]):
 
 async def main(debug=False):
 
+    # Create Group Chat with all agents
+    groupchat = GroupChat(
+        agents=[
+            execution_agent,
+            assistant_agent,
+            user_proxy,
+        ],
+        messages=[],
+        speaker_selection_method="auto",
+    )
+
+    # Create Group Chat Manager
+    groupchat_manager = GroupChatManager(
+        groupchat=groupchat,
+        llm_config=llm_config,
+    )
+
     async with Client(calendar_service) as client:
         session = client.session
         await session.initialize()
@@ -81,26 +59,7 @@ async def main(debug=False):
 
         toolkit = await create_toolkit(session=session)
         toolkit.register_for_llm(assistant_agent)
-        toolkit.register_for_llm(execution_agent)
         toolkit.register_for_execution(execution_agent)
-
-        # Create Group Chat with all agents
-        groupchat = GroupChat(
-            agents=[
-                execution_agent,
-                assistant_agent,
-                user_proxy,
-            ],
-            messages=[],
-            speaker_selection_method="round_robin",
-            max_round=20
-        )
-
-        # Create Group Chat Manager
-        manager = GroupChatManager(
-            groupchat=groupchat,
-            llm_config=llm_config,
-        )
 
         if debug:
             from pydantic.networks import AnyUrl
@@ -112,8 +71,8 @@ async def main(debug=False):
             try:
                 # Initiate the chat with the manager
                 await user_proxy.a_initiate_chat(
-                    manager,
-                    message=user_input, # Limit conversation turns to avoid excessive back-and-forth
+                    groupchat_manager,
+                    message=user_input,
                 )
 
                 for msg in groupchat.messages:
