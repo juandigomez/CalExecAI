@@ -3,7 +3,7 @@
 import os
 import argparse
 import datetime
-from typing import Dict, List, Callable, Optional
+from typing import Dict, Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -38,6 +38,16 @@ def authenticate():
             token.write(creds.to_json())
     return creds
 
+def parse_event(event: Dict[str, Any]) -> Dict[str, str]:
+    return {
+        "id": event.get("id", "No id."),
+        "status": event.get("status", "No status."),
+        "htmlLink": event.get("htmlLink", "No link."),
+        "summary": event.get("summary", "No summary."),
+        "description": event.get("description", "No description."),
+        "start_time": event.get("start", {}).get("dateTime", "No start time."),
+        "end_time": event.get("end", {}).get("dateTime", "No end time."),
+    }
 
 @mcp.resource(
     uri="events://future/{limit}",
@@ -69,20 +79,8 @@ def get_upcoming_events(limit: int):
     ).get("items", [])
 
     # TODO: Make a Pydantic model for events, and parse our events with it
-    events = [
-        {
-            "id": event["id"],
-            "status": event["status"],
-            "htmlLink": event["htmlLink"],
-            "summary": event["summary"],
-            "description": event["description"],
-            "start_time": event.get("start").get("dateTime"),
-            "end_time": event.get("end").get("dateTime"),
-        }
-        for event in events
-    ]
+    return [parse_event(event) for event in events]
 
-    return events
 
 @mcp.resource(uri="events://{start_time_str}/{end_time_str}")
 async def get_events(start_time_str: str, end_time_str: str):
@@ -96,41 +94,29 @@ async def get_events(start_time_str: str, end_time_str: str):
         List of calendar events
     """
 
+    input_date_format = "%Y-%m-%dT%H%M%S"
+    output_date_format = "%Y-%m-%dT%H:%M:%SZ"
+
     service = build("calendar", "v3", credentials=authenticate())
 
-    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%dT%H%M%S")
-    start_time.replace(tzinfo=datetime.timezone.utc)
-    end_time = datetime.datetime.strptime(end_time_str, "%Y-%m-%dT%H%M%S")
-    end_time.replace(tzinfo=datetime.timezone.utc)
+    start_time = datetime.datetime.strptime(start_time_str, input_date_format)
+    end_time = datetime.datetime.strptime(end_time_str, input_date_format)
 
     # Call the Calendar API
     events = (
         service.events()
         .list(
             calendarId="primary",
-            timeMin=datetime.datetime.strftime(start_time, "%Y-%m-%dT%H:%M:%SZ"),
-            timeMax=datetime.datetime.strftime(end_time, "%Y-%m-%dT%H:%M:%SZ"),
+            timeMin=datetime.datetime.strftime(start_time, output_date_format),
+            timeMax=datetime.datetime.strftime(end_time, output_date_format),
             singleEvents=True,
             orderBy="startTime",
         )
         .execute()
     ).get("items", [])
 
-    # Same parsing as before
-    events = [
-        {
-            "id": event["id"],
-            "status": event["status"],
-            "htmlLink": event["htmlLink"],
-            "summary": event.get("summary", "No summary."),
-            "description": event.get("description", "No description."),
-            "start_time": event.get("start").get("dateTime"),
-            "end_time": event.get("end").get("dateTime"),
-        }
-        for event in events
-    ]
+    return [parse_event(event) for event in events]
 
-    return events
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCP Server")
