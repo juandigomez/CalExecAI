@@ -17,7 +17,7 @@ load_dotenv()
 def retreive_conversation_history(agent: ConversableAgent, messages: list[dict[str, Any]]) -> None:
     memory = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
     
-    relevant_memories = memory.search(messages[0]["content"], user_id="user")
+    relevant_memories = memory.search(messages[len(messages) - 1]["content"], user_id="user")
     flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
 
     agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
