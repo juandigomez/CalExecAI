@@ -4,6 +4,7 @@ import os
 import asyncio
 import argparse
 from dotenv import load_dotenv
+from typing import Dict, Any
 
 from fastmcp import Client
 
@@ -43,6 +44,7 @@ async def main(debug=False):
         ],
         messages=[],
         speaker_selection_method="auto",
+        allow_repeat_speaker=False,
     )
 
     # Create Group Chat Manager
@@ -50,6 +52,8 @@ async def main(debug=False):
         groupchat=groupchat,
         llm_config=llm_config,
     )
+
+    memory_client = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
 
     async with Client(calendar_service) as client:
         session = client.session
