@@ -68,7 +68,7 @@ async def main(debug=False):
         if debug:
             from pydantic.networks import AnyUrl
 
-            results = await session.read_resource(uri=AnyUrl("events://future/1"))
+            results = await session.read_resource(uri=AnyUrl("events://2025-06-28T120000/2025-06-28T140000"))
             print(results)
         else:
             user_input = input("\n🔹 What would you like to do?: ")
