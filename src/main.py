@@ -30,7 +30,7 @@ async def async_input(prompt: str = "") -> str:
 async def log_conversation_to_mem0(memory_client, message: Dict[str, Any]):
     # Save each message with metadata
     memory_client.add(
-        messages=[message],
+        messages=[{"role": message["role"], "content": message["content"]}],
         user_id="user")
 
 async def main(debug=False):
