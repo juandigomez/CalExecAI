@@ -18,24 +18,35 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 mcp = FastMCP("Calendar Management Service")
 
+def get_creds_from_token(file_path: str, scopes: list[str]):
+    return Credentials.from_authorized_user_file(file_path, scopes)
+
+def get_creds_from_pk(file_path: str, scopes: list[str]):
+    flow = InstalledAppFlow.from_client_secrets_file(file_path, scopes)
+    creds = flow.run_local_server(port=0)
+    return creds
+
+def cache_creds_as_token(creds: Any, file_path: str):
+    with open(file_path, "w") as token:
+        token.write(creds.to_json())
+
 
 def authenticate():
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    token_file_path = "token.json"
+    pk_file_path = "credentials.json"
+    
+    if os.path.exists(token_file_path):
+        creds = get_creds_from_token(token_file_path, SCOPES)
+
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
+        creds = get_creds_from_pk(pk_file_path, SCOPES)
+        cache_creds_as_token(creds, token_file_path)
+        
     return creds
 
 def parse_event(event: Dict[str, Any]) -> Dict[str, str]:
