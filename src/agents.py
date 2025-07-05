@@ -7,6 +7,9 @@ from autogen import (
 from .llms import llm_config
 from .tools.datetime import get_current_datetime
 
+from autogen.agentchat.group import OnCondition, StringLLMCondition
+from autogen.agentchat.group import AgentTarget
+
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -20,6 +23,7 @@ assistant_agent = ConversableAgent(
     
     When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
     the user's schedule or preferences without asking first. When you are done, let the user know.
+    When you have finished your work, communicate with the User next.
     """,
     llm_config=llm_config,
 )
@@ -49,4 +53,15 @@ register_function(
         if get_current_datetime.__doc__
         else "Get the current date and time."
     ),
+)
+
+assistant_agent.handoffs.add_llm_conditions(
+    [
+        OnCondition(
+                target=AgentTarget(user_proxy),
+                condition=StringLLMCondition(
+                    prompt="When you have finished your work, communicate with the User next."
+                )
+            ),
+    ]
 )

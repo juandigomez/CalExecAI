@@ -36,6 +36,7 @@ async def main():
         ],
         messages=[],
         speaker_selection_method="auto",
+        max_round=10,  # TODO: Bump this way up when not doing dev work
     )
 
     # Create Group Chat Manager
