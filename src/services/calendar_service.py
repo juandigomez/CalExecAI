@@ -13,41 +13,65 @@ from googleapiclient.errors import HttpError
 from fastmcp import FastMCP
 from fastmcp.exceptions import ResourceError
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-
 mcp = FastMCP("Calendar Management Service")
 
-def get_creds_from_token(file_path: str, scopes: list[str]):
-    return Credentials.from_authorized_user_file(file_path, scopes)
+class CalendarSDK():
 
-def get_creds_from_pk(file_path: str, scopes: list[str]):
-    flow = InstalledAppFlow.from_client_secrets_file(file_path, scopes)
-    creds = flow.run_local_server(port=0)
-    return creds
+    def __init__(self, pk_file_path: str, token_file_path: str, scopes: list[str]) -> None:
+        self.pk_file_path = pk_file_path
+        self.token_file_path = token_file_path
+        self.scopes = scopes
 
-def cache_creds_as_token(creds: Any, file_path: str):
-    with open(file_path, "w") as token:
-        token.write(creds.to_json())
-
-
-def authenticate():
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    token_file_path = "token.json"
-    pk_file_path = "credentials.json"
-    
-    if os.path.exists(token_file_path):
-        creds = get_creds_from_token(token_file_path, SCOPES)
-
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        creds = get_creds_from_pk(pk_file_path, SCOPES)
-        cache_creds_as_token(creds, token_file_path)
+    def authenticate(self):
+        creds = None
         
-    return creds
+        if os.path.exists(self.token_file_path):
+            creds = self.get_creds_from_token()
+
+        if not creds:
+            creds = self.get_creds_from_pk()
+            self.cache_creds_as_token(creds)
+        elif creds and creds.expired and creds.refresh_token:
+            # Refresh silently
+            creds.refresh(Request())
+            self.cache_creds_as_token(creds)
+        elif not creds.valid:
+            # Fallback: must re-authenticate
+            creds = self.get_creds_from_pk()
+            self.cache_creds_as_token(creds)
+            
+        return creds
+    
+    def get_creds_from_token(self):
+        return Credentials.from_authorized_user_file(self.token_file_path, self.scopes)
+
+    def get_creds_from_pk(self):
+        flow = InstalledAppFlow.from_client_secrets_file(self.pk_file_path, self.scopes)
+        creds = flow.run_local_server(port=0)
+        return creds
+
+    def cache_creds_as_token(self, creds: Any):
+        with open(self.token_file_path, "w") as token:
+            token.write(creds.to_json())
+
+    @property
+    def credentials(self):
+        if not hasattr(self, "_credentials"):
+            self._credentials = self.authenticate()
+        return self._credentials
+
+    @property
+    def resource(self):
+        if not hasattr(self, "_resource"):
+            self._resource = build("calendar", "v3", credentials=self.credentials)
+        return self._resource
+    
+
+calendar_sdk_ro = CalendarSDK(
+    "credentials.json",
+    "token_ro.json",
+    scopes=["https://www.googleapis.com/auth/calendar.readonly"]
+)
 
 def parse_event(event: Dict[str, Any]) -> Dict[str, str]:
     return {
@@ -74,7 +98,7 @@ def get_upcoming_events(limit: int):
         List of calendar events
     """
 
-    service = build("calendar", "v3", credentials=authenticate())
+    service = calendar_sdk_ro.resource
 
     # Call the Calendar API
     events = (
@@ -108,7 +132,7 @@ async def get_events(start_time_str: str, end_time_str: str):
     input_date_format = "%Y-%m-%dT%H%M%S"
     output_date_format = "%Y-%m-%dT%H:%M:%SZ"
 
-    service = build("calendar", "v3", credentials=authenticate())
+    service = calendar_sdk_ro.resource
 
     start_time = datetime.datetime.strptime(start_time_str, input_date_format)
     end_time = datetime.datetime.strptime(end_time_str, input_date_format)
