@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
 
-mcp_server = FastMCP("Calendar Management Service")
+mcp = FastMCP("Calendar Management Service")
 
 calendar_sdk_ro = CalendarSDK(
     "credentials.json",

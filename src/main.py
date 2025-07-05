@@ -15,7 +15,7 @@ from autogen.mcp import create_toolkit
 
 from .llms import llm_config
 from .agents import assistant_agent, execution_agent, user_proxy
-from .services.calendar_service.mcp import mcp_server as calendar_service
+from .services.calendar_service.mcp import mcp as calendar_service
 
 # Load environment variables first
 load_dotenv()
