@@ -6,6 +6,7 @@ from typing import Dict, Any
 from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
+from .models import CalendarEvent
 
 mcp = FastMCP("Calendar Management Service")
 
@@ -14,17 +15,6 @@ calendar_sdk_ro = CalendarSDK(
     "token_ro.json",
     scopes=["https://www.googleapis.com/auth/calendar.readonly"]
 )
-
-def parse_event(event: Dict[str, Any]) -> Dict[str, str]:
-    return {
-        "id": event.get("id", "No id."),
-        "status": event.get("status", "No status."),
-        "htmlLink": event.get("htmlLink", "No link."),
-        "summary": event.get("summary", "No summary."),
-        "description": event.get("description", "No description."),
-        "start_time": event.get("start", {}).get("dateTime", "No start time."),
-        "end_time": event.get("end", {}).get("dateTime", "No end time."),
-    }
 
 @mcp.resource(
     uri="events://future/{limit}",
@@ -54,9 +44,7 @@ def get_upcoming_events(limit: int):
         )
         .execute()
     ).get("items", [])
-
-    # TODO: Make a Pydantic model for events, and parse our events with it
-    return [parse_event(event) for event in events]
+    return [CalendarEvent(**event).model_dump_json() for event in events]
 
 
 @mcp.resource(uri="events://{start_time_str}/{end_time_str}")
@@ -91,8 +79,7 @@ async def get_events(start_time_str: str, end_time_str: str):
         )
         .execute()
     ).get("items", [])
-
-    return [parse_event(event) for event in events]
+    return [CalendarEvent(**event).model_dump_json() for event in events]
 
 
 if __name__ == "__main__":
