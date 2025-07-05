@@ -25,7 +25,7 @@ async def async_input(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
 
 
-async def main(debug=False):
+async def main():
 
     # Create Group Chat with all agents
     groupchat = GroupChat(
@@ -53,28 +53,19 @@ async def main(debug=False):
         toolkit = await create_toolkit(session=session)
         toolkit.register_for_llm(assistant_agent)
         toolkit.register_for_execution(execution_agent)
-
-        if debug:
-            from pydantic.networks import AnyUrl
-
-            results = await session.read_resource(uri=AnyUrl("events://2025-06-28T120000/2025-06-28T140000"))
-            print(results)
-        else:
-            user_input = input("\n🔹 What would you like to do?: ")
-            try:
-                # Initiate the chat with the manager
-                await user_proxy.a_initiate_chat(
-                    groupchat_manager,
-                    message=user_input,
-                )
-            except Exception as e:
-                print(f"🔹 Error: {e}. Please try again.")
+        
+        user_input = input("\n🔹 What would you like to do?: ")
+        try:
+            # Initiate the chat with the manager
+            await user_proxy.a_initiate_chat(
+                groupchat_manager,
+                message=user_input,
+            )
+        except Exception as e:
+            print(f"🔹 Error: {e}. Please try again.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    args = parser.parse_args()
     required_vars = ["OPENAI_API_KEY", "MCP_SERVER_URL", "MCP_API_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
 
@@ -86,4 +77,4 @@ if __name__ == "__main__":
             "\nPlease create a .env file with these variables or set them in your environment."
         )
     else:
-        asyncio.run(main(args.debug), debug=True)
+        asyncio.run(main(), debug=True)
