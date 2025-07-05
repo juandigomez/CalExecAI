@@ -16,10 +16,7 @@ calendar_sdk_ro = CalendarSDK(
     scopes=["https://www.googleapis.com/auth/calendar.readonly"]
 )
 
-@mcp.resource(
-    uri="events://future/{limit}",
-    # mime_type="application/json"
-)
+@mcp.resource(uri="events://future/{limit}")
 def get_upcoming_events(limit: int):
     """Retrieve upcoming events.
 
@@ -48,7 +45,7 @@ def get_upcoming_events(limit: int):
 
 
 @mcp.resource(uri="events://{start_time_str}/{end_time_str}")
-async def get_events(start_time_str: str, end_time_str: str):
+async def get_events_between_dates(start_time_str: str, end_time_str: str):
     """Retrieve events between two timestamps.
 
     Args:
