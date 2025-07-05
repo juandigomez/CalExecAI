@@ -96,10 +96,4 @@ async def get_events(start_time_str: str, end_time_str: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MCP Server")
-    parser.add_argument(
-        "transport", choices=["stdio", "sse"], help="Transport mode (stdio or sse)"
-    )
-    args = parser.parse_args()
-
-    mcp.run(transport=args.transport)
+    mcp.run()
