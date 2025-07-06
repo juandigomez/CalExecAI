@@ -45,6 +45,7 @@ async def main(debug=False):
         messages=[],
         speaker_selection_method="auto",
         allow_repeat_speaker=False,
+        max_round=10,  # TODO: Bump this way up when not doing dev work
     )
 
     # Create Group Chat Manager
@@ -64,31 +65,22 @@ async def main(debug=False):
         toolkit = await create_toolkit(session=session)
         toolkit.register_for_llm(assistant_agent)
         toolkit.register_for_execution(execution_agent)
+        
+        user_input = input("\n🔹 What would you like to do?: ")
+        try:
+            # Initiate the chat with the manager
+            await user_proxy.a_initiate_chat(
+                groupchat_manager,
+                message=user_input,
+            )
 
-        if debug:
-            from pydantic.networks import AnyUrl
-
-            results = await session.read_resource(uri=AnyUrl("events://2025-06-28T120000/2025-06-28T140000"))
-            print(results)
-        else:
-            user_input = input("\n🔹 What would you like to do?: ")
-            try:
-                # Initiate the chat with the manager
-                await user_proxy.a_initiate_chat(
-                    groupchat_manager,
-                    message=user_input,
-                )
-
-                for msg in groupchat.messages:
-                    await log_conversation_to_mem0(memory_client, msg)
-            except Exception as e:
-                print(f"🔹 Error: {e}. Please try again.")
+            for msg in groupchat.messages:
+                await log_conversation_to_mem0(memory_client, msg)
+        except Exception as e:
+            print(f"🔹 Error: {e}. Please try again.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    args = parser.parse_args()
     required_vars = ["OPENAI_API_KEY", "MCP_SERVER_URL", "MCP_API_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
 
@@ -100,4 +92,4 @@ if __name__ == "__main__":
             "\nPlease create a .env file with these variables or set them in your environment."
         )
     else:
-        asyncio.run(main(args.debug), debug=True)
+        asyncio.run(main(), debug=True)

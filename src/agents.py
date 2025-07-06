@@ -21,6 +21,9 @@ def retreive_conversation_history(agent: ConversableAgent, messages: list[dict[s
     flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
 
     agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
+from autogen.agentchat.group import OnCondition, StringLLMCondition
+from autogen.agentchat.group import AgentTarget
+
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -71,4 +74,15 @@ register_function(
         if get_current_datetime.__doc__
         else "Get the current date and time."
     ),
+)
+
+assistant_agent.handoffs.add_llm_conditions(
+    [
+        OnCondition(
+                target=AgentTarget(user_proxy),
+                condition=StringLLMCondition(
+                    prompt="When you have finished your work, communicate with the User next."
+                )
+            ),
+    ]
 )
