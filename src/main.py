@@ -16,7 +16,7 @@ from autogen.mcp import create_toolkit
 
 from .llms import llm_config
 from .agents import assistant_agent, execution_agent, user_proxy
-from .services.calendar_service import mcp as calendar_service
+from .services.calendar_service.mcp import mcp as calendar_service
 from mem0 import MemoryClient
 
 # Load environment variables first

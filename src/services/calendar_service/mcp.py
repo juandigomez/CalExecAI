@@ -1,42 +1,19 @@
 """Calendar service for interacting with the MCP server."""
 
-import os
 import argparse
 import datetime
 from typing import Dict, Any
-
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from fastmcp import FastMCP
-from fastmcp.exceptions import ResourceError
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+from .sdk import CalendarSDK
 
 mcp = FastMCP("Calendar Management Service")
 
-
-def authenticate():
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
-    return creds
+calendar_sdk_ro = CalendarSDK(
+    "credentials.json",
+    "token_ro.json",
+    scopes=["https://www.googleapis.com/auth/calendar.readonly"]
+)
 
 def parse_event(event: Dict[str, Any]) -> Dict[str, str]:
     return {
@@ -63,7 +40,7 @@ def get_upcoming_events(limit: int):
         List of calendar events
     """
 
-    service = build("calendar", "v3", credentials=authenticate())
+    service = calendar_sdk_ro.resource
 
     # Call the Calendar API
     events = (
@@ -97,7 +74,7 @@ async def get_events(start_time_str: str, end_time_str: str):
     input_date_format = "%Y-%m-%dT%H%M%S"
     output_date_format = "%Y-%m-%dT%H:%M:%SZ"
 
-    service = build("calendar", "v3", credentials=authenticate())
+    service = calendar_sdk_ro.resource
 
     start_time = datetime.datetime.strptime(start_time_str, input_date_format)
     end_time = datetime.datetime.strptime(end_time_str, input_date_format)
