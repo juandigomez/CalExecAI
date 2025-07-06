@@ -1,3 +1,5 @@
+import os
+
 from autogen import (
     AssistantAgent,
     ConversableAgent,
@@ -6,7 +8,19 @@ from autogen import (
 
 from .llms import llm_config
 from .tools.datetime import get_current_datetime
+from mem0 import MemoryClient
+from typing import Any
+from dotenv import load_dotenv
 
+load_dotenv()
+
+def retreive_conversation_history(agent: ConversableAgent, messages: list[dict[str, Any]]) -> None:
+    memory = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
+    
+    relevant_memories = memory.search(messages[len(messages) - 1]["content"], user_id="user")
+    flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
+
+    agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
 
@@ -18,15 +32,22 @@ assistant_agent = ConversableAgent(
     calendar through natural language. You can view calendar events. 
     Always be polite and confirm actions with the user before making any changes to their calendar.
     If you're wondering what day it is, use the get_current_datetime function.
-
-    - When using a tool, defer to the ExecutionAgent.
     
     When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
     the user's schedule or preferences without asking first. When you are done, let the user know.
-    When you have finished your work, communicate with the User next.
+
+    - When using a tool, defer to the ExecutionAgent.
+    - If asked about previous interactions, use the following context to answer:
+    {context}
+
     """,
     llm_config=llm_config,
 )
+
+assistant_agent.register_hook(
+    hookable_method="update_agent_state",
+    hook=retreive_conversation_history,
+    )
 
 execution_agent = AssistantAgent(
     name="ExecutionAgent",
