@@ -57,4 +57,3 @@ class CalendarSDK():
         if not hasattr(self, "_resource"):
             self._resource = build("calendar", "v3", credentials=self.credentials)
         return self._resource
-    
