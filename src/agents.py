@@ -11,19 +11,10 @@ from .tools.datetime import get_current_datetime
 from .services.memory_service.memory import MemoryService
 from typing import Any
 from dotenv import load_dotenv
-
-load_dotenv()
-
-def retreive_conversation_history(agent: ConversableAgent, messages: list[dict[str, Any]]) -> None:
-    memory = MemoryService.get_instance()
-    
-    relevant_memories = memory.search(messages[len(messages) - 1]["content"], user_id="user")
-    flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
-
-    agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
 
+load_dotenv()
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -46,7 +37,7 @@ assistant_agent = ConversableAgent(
 
 assistant_agent.register_hook(
     hookable_method="update_agent_state",
-    hook=retreive_conversation_history,
+    hook=MemoryService.get_instance().retreive_conversation_history,
     )
 
 execution_agent = AssistantAgent(
