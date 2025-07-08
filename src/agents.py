@@ -1,5 +1,3 @@
-import os
-
 from autogen import (
     AssistantAgent,
     ConversableAgent,
@@ -9,12 +7,8 @@ from autogen import (
 from .llms import llm_config
 from .tools.datetime import get_current_datetime
 from .services.memory_service.memory import MemoryService
-from typing import Any
-from dotenv import load_dotenv
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
-
-load_dotenv()
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
