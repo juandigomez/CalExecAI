@@ -1,8 +1,7 @@
 """Calendar service for interacting with the MCP server."""
 
-import argparse
 import datetime
-from typing import Dict, Any
+
 from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
@@ -78,6 +77,12 @@ async def get_events_between_dates(start_time_str: str, end_time_str: str):
     ).get("items", [])
     return [CalendarEvent(**event).model_dump_json() for event in events]
 
+@mcp.tool
+def get_current_datetime() -> str:
+    """
+    Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
+    """
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 if __name__ == "__main__":
     mcp.run()

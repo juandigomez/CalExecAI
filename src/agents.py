@@ -1,13 +1,8 @@
 import os
 
-from autogen import (
-    AssistantAgent,
-    ConversableAgent,
-    register_function,
-)
+from autogen import AssistantAgent, ConversableAgent
 
 from .llms import llm_config
-from .tools.datetime import get_current_datetime
 from mem0 import MemoryClient
 from typing import Any
 from dotenv import load_dotenv
@@ -63,17 +58,6 @@ user_proxy = ConversableAgent(
     human_input_mode="ALWAYS",
     llm_config=False,
     code_execution_config=False,
-)
-
-register_function(
-    get_current_datetime,
-    caller=assistant_agent,
-    executor=execution_agent,
-    description=(
-        get_current_datetime.__doc__
-        if get_current_datetime.__doc__
-        else "Get the current date and time."
-    ),
 )
 
 assistant_agent.handoffs.add_llm_conditions(
