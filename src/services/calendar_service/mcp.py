@@ -5,7 +5,7 @@ import datetime
 from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
-from .models import CalendarEvent
+from .models import CalendarEvent, CalendarEventBoundary
 
 mcp = FastMCP("Calendar Management Service")
 
@@ -13,6 +13,12 @@ calendar_sdk_ro = CalendarSDK(
     "credentials.json",
     "token_ro.json",
     scopes=["https://www.googleapis.com/auth/calendar.readonly"]
+)
+
+calendar_sdk_rw = CalendarSDK(
+    "credentials.json",
+    "token_rw.json",
+    scopes=["https://www.googleapis.com/auth/calendar.events"]
 )
 
 @mcp.resource(uri="events://future/{limit}")
@@ -83,6 +89,26 @@ def get_current_datetime() -> str:
     Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
     """
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+@mcp.tool
+async def create_event(event: CalendarEvent) -> CalendarEvent:
+    """Create a new event.
+
+    Args:
+        event: Calendar event object
+
+    Returns:
+        Calendar event object
+    """
+
+    service = calendar_sdk_rw.resource
+
+    # Call the Calendar API
+    created = service.events().insert(
+        calendarId="primary", 
+        body=event.model_dump(exclude_none=True, exclude_defaults=True)
+    ).execute()
+    return CalendarEvent(**created)
 
 if __name__ == "__main__":
     mcp.run()
