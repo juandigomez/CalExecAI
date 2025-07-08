@@ -17,7 +17,7 @@ from autogen.mcp import create_toolkit
 from .llms import llm_config
 from .agents import assistant_agent, execution_agent, user_proxy
 from .services.calendar_service.mcp import mcp as calendar_service
-from mem0 import MemoryClient
+from .services.memory_service.memory import MemoryService
 
 # Load environment variables first
 load_dotenv()
@@ -25,13 +25,6 @@ load_dotenv()
 
 async def async_input(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
-
-
-async def log_conversation_to_mem0(memory_client, message: Dict[str, Any]):
-    # Save each message with metadata
-    memory_client.add(
-        messages=[{"role": message["role"], "content": message["content"]}],
-        user_id="user")
 
 async def main(debug=False):
 
@@ -52,8 +45,6 @@ async def main(debug=False):
         groupchat=groupchat,
         llm_config=llm_config,
     )
-
-    memory_client = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
 
     async with Client(calendar_service) as client:
         session = client.session
@@ -80,7 +71,7 @@ async def main(debug=False):
                 )
 
                 for msg in groupchat.messages:
-                    await log_conversation_to_mem0(memory_client, msg)
+                    await MemoryService.log_conversation_to_mem0(msg)
             except Exception as e:
                 print(f"🔹 Error: {e}. Please try again.")
 

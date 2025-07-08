@@ -8,14 +8,14 @@ from autogen import (
 
 from .llms import llm_config
 from .tools.datetime import get_current_datetime
-from mem0 import MemoryClient
+from .services.memory_service.memory import MemoryService
 from typing import Any
 from dotenv import load_dotenv
 
 load_dotenv()
 
 def retreive_conversation_history(agent: ConversableAgent, messages: list[dict[str, Any]]) -> None:
-    memory = MemoryClient(api_key=os.getenv("MEM0AI_API_KEY"))
+    memory = MemoryService.get_instance()
     
     relevant_memories = memory.search(messages[len(messages) - 1]["content"], user_id="user")
     flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
