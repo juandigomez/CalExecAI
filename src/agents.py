@@ -3,7 +3,6 @@ import os
 from autogen import AssistantAgent, ConversableAgent
 
 from .llms import llm_config
-from .services.memory_service.memory import MemoryService
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
 
@@ -25,11 +24,6 @@ assistant_agent = ConversableAgent(
     """,
     llm_config=llm_config,
 )
-
-assistant_agent.register_hook(
-    hookable_method="update_agent_state",
-    hook=MemoryService.get_instance().retreive_conversation_history,
-    )
 
 execution_agent = AssistantAgent(
     name="ExecutionAgent",
