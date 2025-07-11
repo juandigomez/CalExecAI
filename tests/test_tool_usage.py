@@ -28,7 +28,10 @@ class ToolUseEventProcessor(EventProcessorProtocol):
 
 
 @pytest.mark.asyncio
-async def test_tool_usage():
+@pytest.mark.parametrize("input,tool_call", [
+    ("what are my next 5 meetings?", "events://future/5"),
+])
+async def test_tool_usage(input: str, tool_call: str):
     async with Client(mcp) as client:
         session = client.session
         await session.initialize()
@@ -37,7 +40,7 @@ async def test_tool_usage():
         toolkit.register_for_llm(assistant_agent)
 
         result = assistant_agent.run(
-            message="what are my next 5 meetings?",
+            message=input,
             max_turns=1,
         )
 
@@ -45,4 +48,4 @@ async def test_tool_usage():
         result.process(processor=tool_use_aggregator)
 
         assert len(tool_use_aggregator.tool_calls) == 1
-        assert json.loads(tool_use_aggregator.tool_calls[0]).get('uri') == 'events://future/5'
+        assert json.loads(tool_use_aggregator.tool_calls[0]).get('uri') == tool_call
