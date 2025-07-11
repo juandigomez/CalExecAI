@@ -29,11 +29,6 @@ assistant_agent = ConversableAgent(
     llm_config=llm_config,
 )
 
-assistant_agent.register_hook(
-    hookable_method="update_agent_state",
-    hook=MemoryService.get_instance().retreive_conversation_history,
-    )
-
 execution_agent = AssistantAgent(
     name="ExecutionAgent",
     system_message="""
@@ -49,6 +44,21 @@ user_proxy = ConversableAgent(
     llm_config=False,
     code_execution_config=False,
 )
+
+assistant_agent.register_hook(
+    hookable_method="update_agent_state",
+    hook=MemoryService.get_instance().retreive_conversation_history,
+    )
+
+assistant_agent.register_hook(
+    hookable_method="process_last_received_message",
+    hook=MemoryService.get_instance().log_conversation_to_mem0,
+    )
+
+user_proxy.register_hook(
+    hookable_method="process_last_received_message",
+    hook=MemoryService.get_instance().log_conversation_to_mem0,
+    )
 
 register_function(
     get_current_datetime,

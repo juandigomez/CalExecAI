@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from mem0 import MemoryClient
 from autogen import ConversableAgent
 
@@ -19,11 +19,20 @@ class MemoryService:
 
         agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
 
-    async def log_conversation_to_mem0(self, message: Dict[str, Any]):
+    def log_conversation_to_mem0(self, message: Union[str, list[dict[str, Any]]]) -> str:
+        print("Logging Message to Mem0: ", message)
+        if isinstance(message, list):
+            msg_text = message[-1].get("content")
+            role = message[-1].get("role")
+        else:
+            msg_text = message
+            role = "user"
+
         self.memory_client.add(
-            messages=[{"role": message["role"], "content": message["content"]}],
+            messages=[{"role": role, "content": msg_text}],
             user_id="user"
         )
+        return message
 
     @classmethod   
     def get_instance(cls) -> 'MemoryService':
