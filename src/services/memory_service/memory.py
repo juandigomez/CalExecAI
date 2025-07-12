@@ -26,11 +26,15 @@ class MemoryService:
         else:
             msg_text = message
             role = "user"
-
-        self.memory_client.add(
-            messages=[{"role": role, "content": msg_text}],
-            user_id="user"
-        )
+        
+        try:
+            self.memory_client.add(
+                messages=[{"role": role, "content": msg_text}],
+                user_id="user"
+            )
+        except Exception as e:
+            print(f"Error logging conversation to mem0: {e}")
+        
         return message
 
     @classmethod   
