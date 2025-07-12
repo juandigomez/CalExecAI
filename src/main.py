@@ -2,7 +2,6 @@
 
 import os
 import asyncio
-from dotenv import load_dotenv
 
 from fastmcp import Client
 
@@ -15,11 +14,7 @@ from autogen.mcp import create_toolkit
 from .llms import llm_config
 from .agents import assistant_agent, execution_agent, user_proxy
 from .services.calendar_service.mcp import mcp as calendar_service
-from .services.memory_service.memory import MemoryService
 
-
-async def async_input(prompt: str = "") -> str:
-    return await asyncio.to_thread(input, prompt)
 
 async def main(debug=False):
 
@@ -46,8 +41,6 @@ async def main(debug=False):
         session = client.session
         await session.initialize()
 
-        user_proxy.a_get_human_input = async_input
-
         toolkit = await create_toolkit(session=session)
         toolkit.register_for_llm(assistant_agent)
         toolkit.register_for_execution(execution_agent)
@@ -59,9 +52,6 @@ async def main(debug=False):
                 groupchat_manager,
                 message=user_input,
             )
-
-            for msg in groupchat.messages:
-                await MemoryService.get_instance().log_conversation_to_mem0(msg)
         except Exception as e:
             print(f"🔹 Error: {e}. Please try again.")
 
