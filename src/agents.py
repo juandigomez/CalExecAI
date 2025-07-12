@@ -1,3 +1,5 @@
+import asyncio
+
 from autogen import (
     AssistantAgent,
     ConversableAgent,
@@ -9,6 +11,10 @@ from .tools.datetime import get_current_datetime
 from .services.memory_service.memory import MemoryService
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
+
+
+async def async_input(prompt: str = " ") -> str:
+    return await asyncio.to_thread(input, prompt)
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -44,6 +50,8 @@ user_proxy = ConversableAgent(
     llm_config=False,
     code_execution_config=False,
 )
+
+user_proxy.a_get_human_input = async_input
 
 assistant_agent.register_hook(
     hookable_method="update_agent_state",
