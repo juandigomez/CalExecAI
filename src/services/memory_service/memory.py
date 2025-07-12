@@ -20,7 +20,6 @@ class MemoryService:
         agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
 
     def log_conversation_to_mem0(self, message: Union[str, list[dict[str, Any]]]) -> str:
-        print("Logging Message to Mem0: ", message)
         if isinstance(message, list):
             msg_text = message[-1].get("content")
             role = message[-1].get("role")

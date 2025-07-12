@@ -59,9 +59,6 @@ async def main(debug=False):
                 groupchat_manager,
                 message=user_input,
             )
-
-            for msg in groupchat.messages:
-                await MemoryService.get_instance().log_conversation_to_mem0(msg)
         except Exception as e:
             print(f"🔹 Error: {e}. Please try again.")
 
