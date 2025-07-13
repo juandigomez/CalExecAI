@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from .sdk import CalendarSDK
 from .models import CalendarEvent, CalendarEventBoundary
 
-mcp = FastMCP("Calendar Management Service")
+mcp = FastMCP(name="Calendar Management Service")
 
 calendar_sdk_ro = CalendarSDK(
     "credentials.json",
@@ -50,7 +50,7 @@ def get_upcoming_events(limit: int):
 
 
 @mcp.resource(uri="events://{start_time_str}/{end_time_str}")
-async def get_events_between_dates(start_time_str: str, end_time_str: str):
+def get_events_between_dates(start_time_str: str, end_time_str: str):
     """Retrieve events between two timestamps.
 
     Args:
@@ -88,10 +88,12 @@ def get_current_datetime() -> str:
     """
     Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
     """
-    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S%z")
+
+# TODO: Get timezone from the user's calendar
 
 @mcp.tool
-async def create_event(event: CalendarEvent) -> CalendarEvent:
+def create_event(event: CalendarEvent) -> CalendarEvent:
     """Create a new event.
 
     Args:
@@ -109,6 +111,7 @@ async def create_event(event: CalendarEvent) -> CalendarEvent:
         body=event.model_dump(exclude_none=True, exclude_defaults=True)
     ).execute()
     return CalendarEvent(**created)
+
 
 if __name__ == "__main__":
     mcp.run()
