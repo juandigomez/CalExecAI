@@ -32,9 +32,9 @@ class WebGroupChatManager(GroupChatManager):
         # Intercept assistant responses
         try:
             # Check that it's a dictionary and from assistant
-            if isinstance(message, dict) and message.get("role") == "assistant":
+            if isinstance(message, dict) and message.get("role") == "assistant" and message.get("content"):
                 await self.websocket.send_text(message["content"])
-            elif isinstance(message, str) and sender.name == "AssistantAgent":
+            elif isinstance(message, str) and sender.name == "AssistantAgent" and message:
                 await self.websocket.send_text(message)
         except Exception as e:
             print(f"❌ Error sending assistant message: {e}")
@@ -87,7 +87,7 @@ groupchat = GroupChat(
     messages=[],
     speaker_selection_method="auto",
     allow_repeat_speaker=False,
-    max_round=10,  # TODO: Bump this way up when not doing dev work
+    max_round=20,  # TODO: Bump this way up when not doing dev work
 )
 
 # Create Group Chat Manager

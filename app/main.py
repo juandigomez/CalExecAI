@@ -28,6 +28,8 @@ async def run_calendar_assistant(user_input: str, websocket: WebSocket) -> str:
                 groupchat_manager,
                 message=user_input,
             )
+
+            await websocket.send_text("Goodbye! Have a great day!")
             
         except Exception as e:
             print(f"🔹 Error: {e}. Please try again.")

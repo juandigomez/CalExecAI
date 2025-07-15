@@ -22,22 +22,21 @@ app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/ws/chat")
 async def get_chat():
-    return FileResponse(os.path.join("frontend", "chat.html"))
+    return FileResponse(os.path.join("frontend", "popup.html"))
 
 @app.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
     await websocket.accept()
 
     try:
-        data = await websocket.receive_text()
-        print(f"🔹 Received from browser: {data}")
+        while True:
+            data = await websocket.receive_text()
+            print(f"🔹 Received from browser: {data}")
 
-        try:
-            response = await run_calendar_assistant(data, websocket)
-            await websocket.send_text(response)
-
-        except Exception as e:
-            await websocket.send_text(f"❌ Internal Error: {str(e)}")
+            try:
+                await run_calendar_assistant(data, websocket)
+            except Exception as e:
+                await websocket.send_text(f"❌ Internal Error: {str(e)}")
 
     except WebSocketDisconnect:
         print("🔌 WebSocket client disconnected.")
