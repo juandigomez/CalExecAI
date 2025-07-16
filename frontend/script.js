@@ -4,10 +4,16 @@ const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const spinner = document.getElementById("spinner");
 const typingIndicator = document.getElementById("typing-indicator");
+const isExtension = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
 
 // Load sounds
-//const sendSound = new Audio("/static/send.mp3");
-//const receiveSound = new Audio("/static/receive.mp3");
+const receiveSound = isExtension
+  ? new Audio(chrome.runtime.getURL("resources/sounds/receive.mp3"))
+  : new Audio("/static/resources/sounds/receive.mp3");
+
+const sendSound = isExtension
+  ? new Audio(chrome.runtime.getURL("resources/sounds/send.mp3"))
+  : new Audio("/static/resources/sounds/send.mp3");
 
 ws.onopen = () => {
   console.log("✅ WebSocket connected");
@@ -16,7 +22,7 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
   removeInlineSpinner();
   typingIndicator.style.display = "none";
-  //receiveSound.play();
+  receiveSound.play();
   appendMessage("Assistant", event.data, "bot");
 };
 
@@ -37,7 +43,7 @@ function sendMessage() {
   if (!text) return;
 
   appendMessage("You", text, "user");
-  //sendSound.play();
+  sendSound.play();
   ws.send(text);
   userInput.value = "";
 
@@ -127,5 +133,11 @@ document.getElementById("theme-toggle").addEventListener("click", () => {
     document.body.classList.replace("light-mode", "dark-mode");
     document.body.setAttribute("data-theme", "dark");
     localStorage.setItem("theme", "dark");
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close(1000, "Client closed connection");
   }
 });

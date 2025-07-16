@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from asyncio import create_task
 
 from app.main import run_calendar_assistant
 
@@ -17,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+tasks = {}
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
@@ -34,9 +36,16 @@ async def websocket_chat(websocket: WebSocket):
             print(f"🔹 Received from browser: {data}")
 
             try:
-                await run_calendar_assistant(data, websocket)
+                if websocket in tasks and not tasks[websocket].done():
+                    tasks[websocket].cancel()
+
+                # Start a new task
+                tasks[websocket] = create_task(run_calendar_assistant(data, websocket))
             except Exception as e:
                 await websocket.send_text(f"❌ Internal Error: {str(e)}")
 
     except WebSocketDisconnect:
         print("🔌 WebSocket client disconnected.")
+        
+        if websocket in tasks:
+            tasks[websocket].cancel()
