@@ -7,12 +7,13 @@ from autogen import (
     ConversableAgent,
     GroupChat,
     GroupChatManager,
-    register_function,
 )
 
 from .llms import llm_config
-from autogen.agentchat.group import OnCondition, StringLLMCondition
-from autogen.agentchat.group import AgentTarget
+from .services.memory_service.memory import MemoryService
+
+async def async_input(prompt: str = " ") -> str:
+    return await asyncio.to_thread(input, prompt)
 
 class WebUserProxyAgent(ConversableAgent):
     def __init__(self, send_text: callable = None, send_agent_response: callable = None, **kwargs):
@@ -48,15 +49,13 @@ assistant_agent = ConversableAgent(
     calendar through natural language. You can view calendar events.
     Never ask the user what day it is. Always use your tools to find the current datetime.
     Use today's date to make judgements about what day it is tomorrow, for instance.
-    
+
     Always use your tools rather than just describing what you would do. 
     Don't make assumptions about the user's schedule or preferences without asking first.
     When you are done, let the user know.
-
+    
     - When using a tool, defer to the ExecutionAgent.
-    - The following context should be useful to you when you need to remember anything:
-    {context}
-
+    - The following context should be useful to you when you need to remember anything:{context}
     """,
     llm_config=llm_config,
 )
@@ -70,12 +69,14 @@ execution_agent = AssistantAgent(
     llm_config=llm_config,
 )
 
-user_proxy = WebUserProxyAgent(
+user_proxy = ConversableAgent(
     name="UserProxy",
     human_input_mode="ALWAYS",
     llm_config=False,
     code_execution_config=False,
 )
+
+user_proxy.a_get_human_input = async_input
 
 
     # Create Group Chat with all agents
@@ -92,7 +93,7 @@ groupchat = GroupChat(
 )
 
 # Create Group Chat Manager
-groupchat_manager = WebGroupChatManager(
+groupchat_manager = GroupChatManager(
     groupchat=groupchat,
     llm_config=llm_config,
 )
