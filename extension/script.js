@@ -16,7 +16,7 @@ const sendSound = isExtension
   : new Audio("/static/resources/sounds/send.mp3");
 
 ws.onopen = () => {
-  console.log("✅ WebSocket connected");
+  logToServer("WebSocket connected", "info");
 };
 
 ws.onmessage = (event) => {
@@ -35,7 +35,7 @@ ws.onmessage = (event) => {
       appendMessage("Assistant", message.content.content, "bot");
     }
   } catch (error) {
-    console.error("❌ Failed to parse WebSocket message:", error);
+    logToServer("Failed to parse WebSocket message: " + error, "error");
   }
 };
 
@@ -43,7 +43,7 @@ ws.onerror = (err) => {
   removeInlineSpinner();
   typingIndicator.style.display = "none";
   appendMessage("System", "⚠️ WebSocket error", "bot");
-  console.error("WebSocket error:", err);
+  logToServer("WebSocket error: " + err, "error");
 };
 
 sendBtn.addEventListener("click", sendMessage);
@@ -54,6 +54,7 @@ userInput.addEventListener("keypress", (e) => {
 function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
+  logToServer("User sent: " + text, "info");
 
   appendMessage("You", text, "user");
   sendSound.play();
@@ -128,6 +129,16 @@ function extractEventCard(text) {
     return card;
   }
   return null;
+}
+
+function logToServer(message, level = "info") {
+  fetch("http://localhost:8000/log", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message, level })
+  }).catch(err => console.error("Failed to log to server:", err));
 }
 
 const prefersDark = localStorage.getItem("theme") === "dark";

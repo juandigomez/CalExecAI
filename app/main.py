@@ -1,8 +1,9 @@
 """Main entry point for the AI Calendar Assistant."""
 
 import asyncio
+import logging
+import warnings
 from fastmcp import Client
-from fastapi import WebSocket
 
 from autogen.mcp import create_toolkit
 
@@ -10,10 +11,20 @@ from .agents import groupchat_manager, assistant_agent, execution_agent, user_pr
 from .services.calendar_service.mcp import mcp as calendar_service
 from autogen.io.websockets import IOWebsockets
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("app/logs/server.log"),
+        logging.StreamHandler()
+    ]
+)
+warnings.filterwarnings("ignore")
+
 
 def on_connect(iostream: IOWebsockets) -> None:
-    print(f" - on_connect(): Connected to client using IOWebsockets {iostream}", flush=True)
-    print(" - on_connect(): Receiving message from client.", flush=True)
+    logging.info(f"[App] - on_connect(): Connected to client using IOWebsockets {iostream}")
+    logging.info("[App] - on_connect(): Receiving message from client.")
 
     async def get_websocket_input(prompt: str):
         return iostream.input()
@@ -40,7 +51,4 @@ async def chat(initial_msg: str, iostream: IOWebsockets):
             )
             
         except Exception as e:
-            print(f"🔹 Error: {e}. Please try again.")
-            await iostream.output(f"❌ Internal Error: {str(e)}")
-        finally:
-            await iostream.close()
+            logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
