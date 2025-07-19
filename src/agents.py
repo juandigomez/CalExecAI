@@ -6,6 +6,10 @@ from .llms import llm_config
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
 
+
+async def async_input(prompt: str = " ") -> str:
+    return await asyncio.to_thread(input, prompt)
+
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
     system_message="""
@@ -42,13 +46,30 @@ user_proxy = ConversableAgent(
     code_execution_config=False,
 )
 
-assistant_agent.handoffs.add_llm_conditions(
-    [
-        OnCondition(
-                target=AgentTarget(user_proxy),
-                condition=StringLLMCondition(
-                    prompt="When you have finished your work, communicate with the User next."
-                )
-            ),
-    ]
+user_proxy.a_get_human_input = async_input
+
+assistant_agent.register_hook(
+    hookable_method="update_agent_state",
+    hook=MemoryService.get_instance().retreive_conversation_history,
+    )
+
+assistant_agent.register_hook(
+    hookable_method="process_last_received_message",
+    hook=MemoryService.get_instance().log_conversation_to_mem0,
+    )
+
+user_proxy.register_hook(
+    hookable_method="process_last_received_message",
+    hook=MemoryService.get_instance().log_conversation_to_mem0,
+    )
+
+register_function(
+    get_current_datetime,
+    caller=assistant_agent,
+    executor=execution_agent,
+    description=(
+        get_current_datetime.__doc__
+        if get_current_datetime.__doc__
+        else "Get the current date and time."
+    ),
 )
