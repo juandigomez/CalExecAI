@@ -9,16 +9,13 @@ from .models import CalendarEvent, CalendarEventBoundary
 
 mcp = FastMCP(name="Calendar Management Service")
 
-calendar_sdk_ro = CalendarSDK(
+calendar_sdk = CalendarSDK(
     "credentials.json",
-    "token_ro.json",
-    scopes=["https://www.googleapis.com/auth/calendar.readonly"]
-)
-
-calendar_sdk_rw = CalendarSDK(
-    "credentials.json",
-    "token_rw.json",
-    scopes=["https://www.googleapis.com/auth/calendar.events"]
+    "token.json",
+    scopes=[
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.events"
+    ]
 )
 
 @mcp.resource(uri="events://future/{limit}")
@@ -32,7 +29,7 @@ def get_upcoming_events(limit: int):
         List of calendar events
     """
 
-    service = calendar_sdk_ro.resource
+    service = calendar_sdk.resource
 
     # Call the Calendar API
     events = (
@@ -64,7 +61,7 @@ def get_events_between_dates(start_time_str: str, end_time_str: str):
     input_date_format = "%Y-%m-%dT%H%M%S"
     output_date_format = "%Y-%m-%dT%H:%M:%SZ"
 
-    service = calendar_sdk_ro.resource
+    service = calendar_sdk.resource
 
     start_time = datetime.datetime.strptime(start_time_str, input_date_format)
     end_time = datetime.datetime.strptime(end_time_str, input_date_format)
@@ -103,7 +100,7 @@ def create_event(event: CalendarEvent) -> CalendarEvent:
         Calendar event object
     """
 
-    service = calendar_sdk_rw.resource
+    service = calendar_sdk.resource
 
     # Call the Calendar API
     created = service.events().insert(
