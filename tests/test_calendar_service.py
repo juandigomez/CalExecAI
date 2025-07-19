@@ -1,8 +1,8 @@
 import pytest
 from fastmcp import Client
 
-from src.services.calendar_service.mcp import mcp
-from src.services.calendar_service.models import CalendarEvent
+from app.services.calendar_service.mcp import mcp
+from app.services.calendar_service.models import CalendarEvent
 
 
 @pytest.mark.asyncio
