@@ -20,10 +20,23 @@ ws.onopen = () => {
 };
 
 ws.onmessage = (event) => {
-  removeInlineSpinner();
-  typingIndicator.style.display = "none";
-  receiveSound.play();
-  appendMessage("Assistant", event.data, "bot");
+  try {
+    const message = JSON.parse(event.data);
+
+    if (
+      message.type === "text" &&
+      message.content &&
+      message.content.sender === "AssistantAgent" &&
+      message.content.content // actual message content
+    ) {
+      removeInlineSpinner();
+      typingIndicator.style.display = "none";
+      receiveSound.play();
+      appendMessage("Assistant", message.content.content, "bot");
+    }
+  } catch (error) {
+    console.error("❌ Failed to parse WebSocket message:", error);
+  }
 };
 
 ws.onerror = (err) => {

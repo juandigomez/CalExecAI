@@ -20,10 +20,10 @@ def on_connect(iostream: IOWebsockets) -> None:
 
     initial_msg = iostream.input()
     user_proxy.a_get_human_input = get_websocket_input
-    asyncio.run(chat(initial_msg))
+    asyncio.run(chat(initial_msg, iostream))
 
 
-async def chat(initial_msg: str):
+async def chat(initial_msg: str, iostream: IOWebsockets):
     async with Client(calendar_service) as client:
         session = client.session
         await session.initialize()
@@ -41,3 +41,6 @@ async def chat(initial_msg: str):
             
         except Exception as e:
             print(f"🔹 Error: {e}. Please try again.")
+            await iostream.output(f"❌ Internal Error: {str(e)}")
+        finally:
+            await iostream.close()
