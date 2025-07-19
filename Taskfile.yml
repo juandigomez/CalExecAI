@@ -6,6 +6,6 @@ vars:
 
 tasks:
   run:
-    python -m src.main
+    python -m app.main
   inspect-mcp:
     npx @modelcontextprotocol/inspector uv run python -m src.services.calendar_service.mcp

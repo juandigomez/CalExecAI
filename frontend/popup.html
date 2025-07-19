@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Calendar Assistant</title>
+  <link rel="stylesheet" href="styles.css" /> 
+  <link rel="stylesheet" href="/static/styles.css?v=4" />
+</head>
+<body class="light-mode" data-theme="light">
+  <div id="header-bar">
+    <button id="theme-toggle">Toggle Theme</button>
+    <h2>🐂 Bevie Calendar Assistant</h2>
+  </div>
+
+  <div id="chat-window"></div>
+  <div id="typing-indicator">Assistant is typing...</div>
+  <div id="spinner"></div>
+
+  <div id="input-row">
+    <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" />
+    <button id="send-btn">Send</button>
+  </div>
+
+  <script src="script.js" defer></script>
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,16 +1,16 @@
 import os
 import asyncio
+from fastapi import WebSocket
 
-from autogen import AssistantAgent, ConversableAgent
+from autogen import (
+    AssistantAgent,
+    ConversableAgent,
+    GroupChat,
+    GroupChatManager,
+)
 
 from .llms import llm_config
-from autogen.agentchat.group import OnCondition, StringLLMCondition
-from autogen.agentchat.group import AgentTarget
 from .services.memory_service.memory import MemoryService
-
-
-async def async_input(prompt: str = " ") -> str:
-    return await asyncio.to_thread(input, prompt)
 
 
 assistant_agent = ConversableAgent(
@@ -20,15 +20,13 @@ assistant_agent = ConversableAgent(
     calendar through natural language. You can view calendar events.
     Never ask the user what day it is. Always use your tools to find the current datetime.
     Use today's date to make judgements about what day it is tomorrow, for instance.
-    
+
     Always use your tools rather than just describing what you would do. 
     Don't make assumptions about the user's schedule or preferences without asking first.
     When you are done, let the user know.
-
+    
     - When using a tool, defer to the ExecutionAgent.
-    - The following context should be useful to you when you need to remember anything:
-    {context}
-
+    - The following context should be useful to you when you need to remember anything:{context}
     """,
     llm_config=llm_config,
 )
@@ -49,7 +47,24 @@ user_proxy = ConversableAgent(
     code_execution_config=False,
 )
 
-user_proxy.a_get_human_input = async_input
+    # Create Group Chat with all agents
+groupchat = GroupChat(
+    agents=[
+        execution_agent,
+        assistant_agent,
+        user_proxy,
+    ],
+    messages=[],
+    speaker_selection_method="auto",
+    allow_repeat_speaker=False,
+    max_round=20,  # TODO: Bump this way up when not doing dev work
+)
+
+# Create Group Chat Manager
+groupchat_manager = GroupChatManager(
+    groupchat=groupchat,
+    llm_config=llm_config,
+)
 
 assistant_agent.register_hook(
     hookable_method="update_agent_state",

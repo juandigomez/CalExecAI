@@ -3,8 +3,8 @@ import json
 from fastmcp import Client
 from autogen.mcp import create_toolkit
 
-from src.services.calendar_service.mcp import mcp
-from src.agents import assistant_agent
+from app.services.calendar_service.mcp import mcp
+from app.agents import assistant_agent
 from autogen.io.run_response import RunResponseProtocol
 from autogen.events import BaseEvent
 from autogen.events.agent_events import ToolCallEvent

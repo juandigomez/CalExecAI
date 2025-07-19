@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "Bevie Calendar Assistant",
+    "version": "1.0",
+    "description": "Chat UI as Chrome extension popup",
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+      "16": "resources/icons/icon16.png",
+      "48": "resources/icons/icon48.png",
+      "128": "resources/icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "resources/icons/icon16.png",
+    "48": "resources/icons/icon48.png",
+    "128": "resources/icons/icon128.png"
+  },
+    "permissions": []
+  }
