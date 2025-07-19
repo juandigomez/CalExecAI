@@ -12,35 +12,6 @@ from autogen import (
 from .llms import llm_config
 from .services.memory_service.memory import MemoryService
 
-async def async_input(prompt: str = " ") -> str:
-    return await asyncio.to_thread(input, prompt)
-
-class WebUserProxyAgent(ConversableAgent):
-    def __init__(self, send_text: callable = None, send_agent_response: callable = None, **kwargs):
-        super().__init__(**kwargs)
-        self.send_text = send_text
-        self.send_agent_response = send_agent_response
-
-    async def a_get_human_input(self, prompt: str) -> str:
-        return await self.send_text()
-
-class WebGroupChatManager(GroupChatManager):
-    def __init__(self, websocket: WebSocket=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.websocket = websocket
-
-    async def a_receive(self, message, sender, groupchat, receiver):
-        # Intercept assistant responses
-        try:
-            # Check that it's a dictionary and from assistant
-            if isinstance(message, dict) and message.get("role") == "assistant" and message.get("content"):
-                await self.websocket.send_text(message["content"])
-            elif isinstance(message, str) and sender.name == "AssistantAgent" and message:
-                await self.websocket.send_text(message)
-        except Exception as e:
-            print(f"❌ Error sending assistant message: {e}")
-
-        return await super().a_receive(message, sender, groupchat, receiver)
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -75,9 +46,6 @@ user_proxy = ConversableAgent(
     llm_config=False,
     code_execution_config=False,
 )
-
-user_proxy.a_get_human_input = async_input
-
 
     # Create Group Chat with all agents
 groupchat = GroupChat(
