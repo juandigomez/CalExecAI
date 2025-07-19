@@ -1,19 +1,21 @@
 """Calendar service for interacting with the MCP server."""
 
-import argparse
 import datetime
-from typing import Dict, Any
+
 from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
-from .models import CalendarEvent
+from .models import CalendarEvent, CalendarEventBoundary
 
-mcp = FastMCP("Calendar Management Service")
+mcp = FastMCP(name="Calendar Management Service")
 
-calendar_sdk_ro = CalendarSDK(
+calendar_sdk = CalendarSDK(
     "credentials.json",
-    "token_ro.json",
-    scopes=["https://www.googleapis.com/auth/calendar.readonly"]
+    "token.json",
+    scopes=[
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.events"
+    ]
 )
 
 @mcp.resource(uri="events://future/{limit}")
@@ -27,7 +29,7 @@ def get_upcoming_events(limit: int):
         List of calendar events
     """
 
-    service = calendar_sdk_ro.resource
+    service = calendar_sdk.resource
 
     # Call the Calendar API
     events = (
@@ -45,7 +47,7 @@ def get_upcoming_events(limit: int):
 
 
 @mcp.resource(uri="events://{start_time_str}/{end_time_str}")
-async def get_events_between_dates(start_time_str: str, end_time_str: str):
+def get_events_between_dates(start_time_str: str, end_time_str: str):
     """Retrieve events between two timestamps.
 
     Args:
@@ -59,7 +61,7 @@ async def get_events_between_dates(start_time_str: str, end_time_str: str):
     input_date_format = "%Y-%m-%dT%H%M%S"
     output_date_format = "%Y-%m-%dT%H:%M:%SZ"
 
-    service = calendar_sdk_ro.resource
+    service = calendar_sdk.resource
 
     start_time = datetime.datetime.strptime(start_time_str, input_date_format)
     end_time = datetime.datetime.strptime(end_time_str, input_date_format)
@@ -77,6 +79,35 @@ async def get_events_between_dates(start_time_str: str, end_time_str: str):
         .execute()
     ).get("items", [])
     return [CalendarEvent(**event).model_dump_json() for event in events]
+
+@mcp.tool
+def get_current_datetime() -> str:
+    """
+    Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
+    """
+    return datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S%z")
+
+# TODO: Get timezone from the user's calendar
+
+@mcp.tool
+def create_event(event: CalendarEvent) -> CalendarEvent:
+    """Create a new event.
+
+    Args:
+        event: Calendar event object
+
+    Returns:
+        Calendar event object
+    """
+
+    service = calendar_sdk.resource
+
+    # Call the Calendar API
+    created = service.events().insert(
+        calendarId="primary", 
+        body=event.model_dump(exclude_none=True, exclude_defaults=True)
+    ).execute()
+    return CalendarEvent(**created)
 
 
 if __name__ == "__main__":
