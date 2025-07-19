@@ -35,21 +35,9 @@ async def run_websocket_server(app):
         yield
 
 app = FastAPI(lifespan=run_websocket_server)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Replace with chrome-extension://<id> in prod
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
     
 @app.post("/log")
 async def receive_log(entry: LogEntry):
     log_func = getattr(logging, entry.level.lower(), logging.info)
     log_func(f"[JavaScript] {entry.message}")
     return {"status": "ok"}
-
-@app.get("/ws/chat")
-async def get_chat():
-    return FileResponse(os.path.join("frontend", "popup.html"))
