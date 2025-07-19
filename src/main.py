@@ -18,11 +18,6 @@ from .services.calendar_service.mcp import mcp as calendar_service
 
 async def main(debug=False):
 
-    assistant_agent.register_hook(
-        hookable_method="update_agent_state",
-        hook=MemoryService.get_instance().retreive_conversation_history,
-    )
-
     # Create Group Chat with all agents
     groupchat = GroupChat(
         agents=[

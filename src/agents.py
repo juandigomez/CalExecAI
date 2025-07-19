@@ -1,14 +1,17 @@
 import os
+import asyncio
 
 from autogen import AssistantAgent, ConversableAgent
 
 from .llms import llm_config
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
+from .services.memory_service.memory import MemoryService
 
 
 async def async_input(prompt: str = " ") -> str:
     return await asyncio.to_thread(input, prompt)
+
 
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
@@ -51,25 +54,14 @@ user_proxy.a_get_human_input = async_input
 assistant_agent.register_hook(
     hookable_method="update_agent_state",
     hook=MemoryService.get_instance().retreive_conversation_history,
-    )
+)
 
 assistant_agent.register_hook(
     hookable_method="process_last_received_message",
     hook=MemoryService.get_instance().log_conversation_to_mem0,
-    )
+)
 
 user_proxy.register_hook(
     hookable_method="process_last_received_message",
     hook=MemoryService.get_instance().log_conversation_to_mem0,
-    )
-
-register_function(
-    get_current_datetime,
-    caller=assistant_agent,
-    executor=execution_agent,
-    description=(
-        get_current_datetime.__doc__
-        if get_current_datetime.__doc__
-        else "Get the current date and time."
-    ),
 )
