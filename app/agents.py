@@ -1,3 +1,5 @@
+import os
+import asyncio
 from fastapi import WebSocket
 
 from autogen import (
@@ -9,8 +11,6 @@ from autogen import (
 )
 
 from .llms import llm_config
-from .tools.datetime import get_current_datetime
-from .services.memory_service.memory import MemoryService
 from autogen.agentchat.group import OnCondition, StringLLMCondition
 from autogen.agentchat.group import AgentTarget
 
@@ -45,15 +45,16 @@ assistant_agent = ConversableAgent(
     name="AssistantAgent",
     system_message="""
     You are a helpful AI calendar assistant. Your role is to help users manage their 
-    calendar through natural language. You can view calendar events. 
-    Always be polite and confirm actions with the user before making any changes to their calendar.
-    If you're wondering what day it is, use the get_current_datetime function.
+    calendar through natural language. You can view calendar events.
+    Never ask the user what day it is. Always use your tools to find the current datetime.
+    Use today's date to make judgements about what day it is tomorrow, for instance.
     
-    When asked about these tasks, use your tools rather than just describing what you would do. Don't make assumptions about 
-    the user's schedule or preferences without asking first. When you are done, let the user know.
+    Always use your tools rather than just describing what you would do. 
+    Don't make assumptions about the user's schedule or preferences without asking first.
+    When you are done, let the user know.
 
     - When using a tool, defer to the ExecutionAgent.
-    - If asked about previous interactions, use the following context to answer:
+    - The following context should be useful to you when you need to remember anything:
     {context}
 
     """,
@@ -99,36 +100,14 @@ groupchat_manager = WebGroupChatManager(
 assistant_agent.register_hook(
     hookable_method="update_agent_state",
     hook=MemoryService.get_instance().retreive_conversation_history,
-    )
+)
 
 assistant_agent.register_hook(
     hookable_method="process_last_received_message",
     hook=MemoryService.get_instance().log_conversation_to_mem0,
-    )
+)
 
 user_proxy.register_hook(
     hookable_method="process_last_received_message",
     hook=MemoryService.get_instance().log_conversation_to_mem0,
-    )
-
-register_function(
-    get_current_datetime,
-    caller=assistant_agent,
-    executor=execution_agent,
-    description=(
-        get_current_datetime.__doc__
-        if get_current_datetime.__doc__
-        else "Get the current date and time."
-    ),
-)
-
-assistant_agent.handoffs.add_llm_conditions(
-    [
-        OnCondition(
-                target=AgentTarget(user_proxy),
-                condition=StringLLMCondition(
-                    prompt="When you have finished your work, communicate with the User next."
-                )
-            ),
-    ]
 )
