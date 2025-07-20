@@ -5,6 +5,7 @@ const sendBtn = document.getElementById("send-btn");
 const spinner = document.getElementById("spinner");
 const typingIndicator = document.getElementById("typing-indicator");
 const isExtension = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
+let pendingEventLink = null;
 
 // Load sounds
 const receiveSound = isExtension
@@ -23,17 +24,51 @@ ws.onmessage = (event) => {
   try {
     const message = JSON.parse(event.data);
 
+    // 1. Handle tool_response: Extract and store link
+    if (
+      message.type === "tool_response" &&
+      message.content &&
+      message.content.tool_responses
+    ) {
+      const response = message.content.tool_responses[0].content;
+
+      const match = response.match(/^\('(.+?)',\s*None\)$/s);
+      if (match) {
+        const jsonString = match[1]
+          .replace(/\\n/g, "")
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, "\\");
+
+        const eventData = JSON.parse(jsonString);
+
+        if (eventData.htmlLink) {
+          pendingEventLink = eventData.htmlLink;
+        }
+      }
+    }
+
+    // 2. Handle assistant text message
     if (
       message.type === "text" &&
       message.content &&
       message.content.sender === "AssistantAgent" &&
-      message.content.content // actual message content
+      message.content.content
     ) {
       removeInlineSpinner();
       typingIndicator.style.display = "none";
       receiveSound.play();
-      appendMessage("Assistant", message.content.content, "bot");
+
+      let botMessage = message.content.content;
+
+      // Inject link if available
+      if (pendingEventLink) {
+        botMessage += `<br><br>📅 <a href="${pendingEventLink}" target="_blank">View Calendar Event</a>`;
+        pendingEventLink = null;
+      }
+
+      appendMessage("Bevie", botMessage, "bot");
     }
+
   } catch (error) {
     logToServer("Failed to parse WebSocket message: " + error, "error");
   }
@@ -73,14 +108,6 @@ function appendMessage(sender, text, className) {
   msg.innerHTML = `<strong>${sender}:</strong><br>${text}<span class="timestamp">${time}</span>`;
   chatWindow.appendChild(msg);
 
-  // GCal-style event card
-  if (sender === "Assistant") {
-    const eventCard = extractEventCard(text);
-    if (eventCard) {
-      chatWindow.appendChild(eventCard);
-    }
-  }
-
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
@@ -102,33 +129,6 @@ function addInlineSpinner() {
 function removeInlineSpinner() {
   const old = document.getElementById("inline-spinner");
   if (old) old.remove();
-}
-
-
-function extractEventCard(text) {
-  const eventRegex = /(schedule|add|set).*?(\bmeeting\b|\bevent\b).*?\b(on|for)\b (.+?)\b(at|@)\b (.+?)(\.|$)/i;
-  const match = text.match(eventRegex);
-
-  if (match) {
-    const title = match[2].charAt(0).toUpperCase() + match[2].slice(1);
-    const date = match[4];
-    const time = match[6];
-
-    const card = document.createElement("div");
-    card.style.marginTop = "10px";
-    card.style.padding = "12px 16px";
-    card.style.border = "1px solid #e5e7eb";
-    card.style.borderRadius = "10px";
-    card.style.backgroundColor = "#fef9f5";
-    card.style.fontSize = "13px";
-    card.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.05)";
-    card.innerHTML = `
-      <strong>📅 ${title}</strong><br>
-      <span>🗓️ ${date}<br>🕒 ${time}</span>
-    `;
-    return card;
-  }
-  return null;
 }
 
 function logToServer(message, level = "info") {
@@ -162,6 +162,12 @@ document.getElementById("theme-toggle").addEventListener("click", () => {
 
 window.addEventListener("beforeunload", () => {
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.close(1000, "Client closed connection");
+    // Choose closure code depending on your situation
+    const isNavigation = performance.getEntriesByType("navigation")[0]?.type === "navigate";
+    
+    const code = isNavigation ? 1001 : 1000; // Use 1001 if navigating away, 1000 otherwise
+    const reason = code === 1001 ? "Client navigating away" : "Client closed connection";
+
+    ws.close(code, reason);
   }
 });

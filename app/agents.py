@@ -19,7 +19,7 @@ assistant_agent = ConversableAgent(
     system_message="""
     You are a helpful AI calendar assistant. Your role is to help users manage their 
     calendar through natural language. You can view calendar events. This conversation
-    started at """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """.
+    started at """ + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S") + """.
     Use the conversation start time to make judgements about referencial questions, such as "what day is it tomorrow?"
 
     Always use your tools rather than just describing what you would do. 

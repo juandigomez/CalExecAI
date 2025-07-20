@@ -34,7 +34,13 @@ def on_connect(iostream: IOWebsockets) -> None:
 
     initial_msg = iostream.input()
     user_proxy.a_get_human_input = get_websocket_input
-    asyncio.run(chat(initial_msg, iostream))
+
+    try:
+        asyncio.run(chat(initial_msg, iostream))
+    except websockets.exceptions.ConnectionClosedOK as e:
+        logging.info(f"[App] - Client Disconnected (code={e.code})")
+    except Exception as e:
+        logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
 
 
 async def chat(initial_msg: str, iostream: IOWebsockets):
@@ -52,8 +58,7 @@ async def chat(initial_msg: str, iostream: IOWebsockets):
                 groupchat_manager,
                 message=initial_msg,
             )
-        except (websockets.exceptions.ConnectionClosedError,
-            websockets.exceptions.ConnectionClosedOK) as e:
-            logging.info(f"[App] - Client Disconnected Gracefully (code={e.code}): {e.reason}")
+        except websockets.exceptions.ConnectionClosedOK as e:
+            logging.info(f"[App] - Client Disconnected (code={e.code})")
         except Exception as e:
-            logging.error(f"[App] - {e.code} Error in Chat Loop: {e}. Please try again.")
+            logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")

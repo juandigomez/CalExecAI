@@ -2,6 +2,7 @@
 
 import logging
 import warnings
+import websockets
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("app/logs/server.log"),
+        logging.FileHandler("app/logs/server.log", mode="w"),
         logging.StreamHandler()
     ]
 )
@@ -28,10 +29,15 @@ class LogEntry(BaseModel):
 
 @asynccontextmanager
 async def run_websocket_server(app):
-    with IOWebsockets.run_server_in_thread(on_connect=on_connect, port=8001) as uri:
-        logging.info(f"[Server] - Websocket server started at {uri}.")
+    try:
+        with IOWebsockets.run_server_in_thread(on_connect=on_connect, port=8001) as uri:
+            logging.info(f"[Server] - Websocket server started at {uri}.")
 
-        yield
+            yield
+    except websockets.exceptions.ConnectionClosedOK as e:
+        logging.info(f"[Server] - Client Disconnected (code={e.code})")
+    except Exception as e:
+        logging.error(f"[Server] - Error running websocket server: {e}")
 
 app = FastAPI(lifespan=run_websocket_server)
 
