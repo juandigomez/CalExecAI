@@ -28,6 +28,7 @@ def setup_logging():
     )
     warnings.filterwarnings("ignore")
 
+setup_logging()
 
 class LogEntry(BaseModel):
     message: str
@@ -39,7 +40,6 @@ async def run_websocket_server(_: FastAPI):
     try:
         with IOWebsockets.run_server_in_thread(on_connect=on_connect, port=8080) as uri:
             logging.info(f"[Server] - Websocket server started at {uri}.")
-
             yield
     except websockets.exceptions.ConnectionClosedOK as e:
         logging.info(f"[Server] - Client Disconnected (code={e.code})")
