@@ -283,3 +283,20 @@ body.dark-mode .inline-spinner {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
 }
+
+/* Calendar Link */
+.calendar-link {
+  display: inline-block;
+  padding: 10px 16px;
+  background-color: #007BFF;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-family: 'Segoe UI', sans-serif;
+  transition: background-color 0.3s;
+}
+
+.calendar-link:hover {
+  background-color: #0056b3;
+}

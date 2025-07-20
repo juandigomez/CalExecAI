@@ -62,7 +62,7 @@ ws.onmessage = (event) => {
 
       // Inject link if available
       if (pendingEventLink) {
-        botMessage += `<br><br>📅 <a href="${pendingEventLink}" target="_blank">View Calendar Event</a>`;
+        botMessage += `<br><br><a href="${pendingEventLink}" target="_blank" class="calendar-link">📅 View Calendar Event</a>`;
         pendingEventLink = null;
       }
 
