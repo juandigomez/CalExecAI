@@ -9,15 +9,7 @@ from fastmcp import FastMCP
 from .sdk import CalendarSDK
 from .models import CalendarEvent
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("app/logs/server.log"),
-        logging.StreamHandler()
-    ]
-)
+logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore")
 
 mcp = FastMCP(name="Calendar Management Service")
@@ -56,7 +48,7 @@ def get_upcoming_events(limit: int):
         )
         .execute()
     ).get("items", [])
-    logging.info(f"[MCP] - Getting Upcoming Events: {events}")
+    logger.info(f"[MCP] - Getting Upcoming Events: {events}")
     return [CalendarEvent(**event).model_dump_json() for event in events]
 
 
@@ -92,15 +84,16 @@ def get_events_between_dates(start_time_str: str, end_time_str: str):
         )
         .execute()
     ).get("items", [])
-    logging.info(f"[MCP] - Getting Events Between Dates: {events}")
+    logger.info(f"[MCP] - Getting Events Between Dates: {events}")
     return [CalendarEvent(**event).model_dump_json() for event in events]
 
-# @mcp.tool
-# def get_current_datetime() -> str:
-#     """
-#     Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
-#     """
-#     return datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S%z")
+@mcp.tool
+def get_current_datetime() -> str:
+    """
+    Returns the current date and time in the format "YYYY-MM-DD HH:MM:SS".
+    """
+    logger.info("[MCP] - Getting Current Datetime")
+    return datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S%z")
 
 @mcp.tool
 def create_event(event: CalendarEvent) -> CalendarEvent:
@@ -120,7 +113,7 @@ def create_event(event: CalendarEvent) -> CalendarEvent:
         calendarId="primary", 
         body=event.model_dump(exclude_none=True, exclude_defaults=True)
     ).execute()
-    logging.info(f"[MCP] - Creating Event: {created}")
+    logger.info(f"[MCP] - Creating Event: {created}")
     return CalendarEvent(**created)
 
 

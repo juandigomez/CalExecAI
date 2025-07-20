@@ -1,4 +1,4 @@
-const ws = new WebSocket("ws://localhost:8001/ws/chat");
+const ws = new WebSocket("ws://localhost:8001/");
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
@@ -24,7 +24,6 @@ ws.onmessage = (event) => {
   try {
     const message = JSON.parse(event.data);
 
-    // 1. Handle tool_response: Extract and store link
     if (
       message.type === "tool_response" &&
       message.content &&
@@ -47,7 +46,6 @@ ws.onmessage = (event) => {
       }
     }
 
-    // 2. Handle assistant text message
     if (
       message.type === "text" &&
       message.content &&

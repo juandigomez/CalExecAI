@@ -14,20 +14,12 @@ from .agents import assistant_agent, execution_agent, groupchat_manager, user_pr
 from .services.calendar_service.mcp import mcp as calendar_service
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("app/logs/server.log"),
-        logging.StreamHandler()
-    ]
-)
+logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore")
 
-
 def on_connect(iostream: IOWebsockets) -> None:
-    logging.info(f"[App] - on_connect(): Connected to client using IOWebsockets {iostream}")
-    logging.info("[App] - on_connect(): Receiving message from client.")
+    logger.info(f"[App] - on_connect(): Connected to client using IOWebsockets {iostream}")
+    logger.info("[App] - on_connect(): Receiving message from client.")
 
     async def get_websocket_input(prompt: str):
         return iostream.input()
@@ -38,9 +30,9 @@ def on_connect(iostream: IOWebsockets) -> None:
     try:
         asyncio.run(chat(initial_msg, iostream))
     except websockets.exceptions.ConnectionClosedOK as e:
-        logging.info(f"[App] - Client Disconnected (code={e.code})")
+        logger.info(f"[App] - Client Disconnected (code={e.code})")
     except Exception as e:
-        logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
+        logger.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
 
 
 async def chat(initial_msg: str, iostream: IOWebsockets):
@@ -59,6 +51,6 @@ async def chat(initial_msg: str, iostream: IOWebsockets):
                 message=initial_msg,
             )
         except websockets.exceptions.ConnectionClosedOK as e:
-            logging.info(f"[App] - Client Disconnected (code={e.code})")
+            logger.info(f"[App] - Client Disconnected (code={e.code})")
         except Exception as e:
-            logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
+            logger.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
