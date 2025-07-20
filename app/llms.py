@@ -1,9 +1,11 @@
+"""LLM configuration for the AI Calendar Assistant."""
+
 import os
+
 from dotenv import load_dotenv
 
-# Load environment variables first
-load_dotenv()
 
+load_dotenv()
 
 config_list = [{"model": "gpt-4.1-mini", "api_key": os.getenv("OPENAI_API_KEY")}]
 

@@ -3,13 +3,16 @@
 import asyncio
 import logging
 import warnings
+
+import websockets
 from fastmcp import Client
 
+from autogen.io.websockets import IOWebsockets
 from autogen.mcp import create_toolkit
 
-from .agents import groupchat_manager, assistant_agent, execution_agent, user_proxy
+from .agents import assistant_agent, execution_agent, groupchat_manager, user_proxy
 from .services.calendar_service.mcp import mcp as calendar_service
-from autogen.io.websockets import IOWebsockets
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +52,8 @@ async def chat(initial_msg: str, iostream: IOWebsockets):
                 groupchat_manager,
                 message=initial_msg,
             )
-            
+        except (websockets.exceptions.ConnectionClosedError,
+            websockets.exceptions.ConnectionClosedOK) as e:
+            logging.info(f"[App] - Client Disconnected Gracefully (code={e.code}): {e.reason}")
         except Exception as e:
-            logging.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
+            logging.error(f"[App] - {e.code} Error in Chat Loop: {e}. Please try again.")

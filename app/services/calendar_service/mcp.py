@@ -9,6 +9,7 @@ from fastmcp import FastMCP
 from .sdk import CalendarSDK
 from .models import CalendarEvent
 
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

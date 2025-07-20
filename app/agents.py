@@ -1,15 +1,17 @@
+"""Agents Configuration for the AI Calendar Assistant."""
+
+from datetime import datetime
+
 from autogen import (
     AssistantAgent,
     ConversableAgent,
-    UserProxyAgent,
     GroupChat,
     GroupChatManager,
+    UserProxyAgent,
 )
 
 from .llms import llm_config
 from .services.memory_service.memory import MemoryService
-
-from datetime import datetime
 
 
 assistant_agent = ConversableAgent(

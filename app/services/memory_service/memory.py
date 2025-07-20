@@ -1,11 +1,16 @@
-import os
+"""Memory Logging Service."""
+
 import logging
+import os
 import warnings
 
-from dotenv import load_dotenv
 from typing import Any, Union
+
+from dotenv import load_dotenv
 from mem0 import MemoryClient
+
 from autogen import ConversableAgent
+
 
 load_dotenv()
 logging.basicConfig(

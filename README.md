@@ -5,7 +5,7 @@ A console-based AI calendar assistant built with Autogen that helps manage your 
 ## Features
 - Natural language processing for calendar operations
 - Integration with MCP server for calendar management
-- Console-based interface for easy interaction
+- Chrome Extension UI
 - Built with `uv` for fast and reliable dependency management
 
 ## Prerequisites
@@ -37,7 +37,7 @@ A console-based AI calendar assistant built with Autogen that helps manage your 
 ## Usage
 Run the assistant with:
 ```
-uvicorn api.server:app --reload --host 0.0.0.0 --port 8001
+uvicorn api.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Configuration

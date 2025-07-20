@@ -1,6 +1,5 @@
-# server.py
+"""Extension Server Calling Calendar Service Entry Point."""
 
-import os
 import logging
 import warnings
 from contextlib import asynccontextmanager
@@ -35,6 +34,14 @@ async def run_websocket_server(app):
         yield
 
 app = FastAPI(lifespan=run_websocket_server)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
     
 @app.post("/log")
 async def receive_log(entry: LogEntry):
