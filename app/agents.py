@@ -27,6 +27,7 @@ assistant_agent = ConversableAgent(
     When you are done, let the user know.
     
     - When using a tool, defer to the ExecutionAgent.
+    - When asked about relative time, always use a tool to get the current time.
     - The following context should be useful to you when you need to remember anything:{context}
     """,
     llm_config=llm_config,
