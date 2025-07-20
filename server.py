@@ -1,5 +1,6 @@
 """Extension Server Calling Calendar Service Entry Point."""
 
+import os
 import logging
 import warnings
 import websockets
@@ -13,15 +14,20 @@ from autogen.io.websockets import IOWebsockets
 
 from app.main import on_connect
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("app/logs/server.log", mode="w"),
-        logging.StreamHandler()
-    ]
-)
-warnings.filterwarnings("ignore")
+def setup_logging():
+    if not os.path.exists("app/logs"):
+        os.makedirs("app/logs")
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler("app/logs/server.log", mode="w"),
+            logging.StreamHandler()
+        ]
+    )
+    warnings.filterwarnings("ignore")
+
 
 class LogEntry(BaseModel):
     message: str
