@@ -30,7 +30,7 @@ class LogEntry(BaseModel):
 @asynccontextmanager
 async def run_websocket_server(app):
     try:
-        with IOWebsockets.run_server_in_thread(on_connect=on_connect, port=8001) as uri:
+        with IOWebsockets.run_server_in_thread(on_connect=on_connect, port=8080) as uri:
             logging.info(f"[Server] - Websocket server started at {uri}.")
 
             yield
