@@ -8,4 +8,4 @@ tasks:
   run:
     uvicorn server:app --reload --host 0.0.0.0 --port 8000
   inspect-mcp:
-    npx @modelcontextprotocol/inspector uv run python -m src.services.calendar_service.mcp
+    npx @modelcontextprotocol/inspector uv run python -m app.services.calendar_service.mcp
