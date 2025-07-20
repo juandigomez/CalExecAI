@@ -137,7 +137,34 @@ def delete_event(event_id: str) -> None:
         logger.error(f"[MCP] - Error deleting event: {event_id}")
         logger.error(f"[MCP] - {e}")
         raise e
+    
+@mcp.tool
+def update_event(event_id: str,event: CalendarEvent) -> CalendarEvent:
+    """Update an event.
 
+    Args:
+        event_id: ID of the event to update
+        event: Calendar event object
+
+    Returns:
+        Calendar event object
+    """
+
+    service = calendar_sdk.resource
+
+    try:
+        # Call the Calendar API
+        updated = service.events().update(
+            calendarId="primary", 
+            eventId=event_id, 
+            body=event.model_dump(exclude_none=True, exclude_defaults=True)
+        ).execute()
+        logger.info(f"[MCP] - Updated Event: {updated}")
+        return CalendarEvent(**updated)
+    except Exception as e:
+        logger.error(f"[MCP] - Error updating event: {event_id}")
+        logger.error(f"[MCP] - {e}")
+        raise e
 
 if __name__ == "__main__":
     mcp.run()
