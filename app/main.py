@@ -1,26 +1,38 @@
 """Main entry point for the AI Calendar Assistant."""
 
 import asyncio
-from fastmcp import Client
-from fastapi import WebSocket
+import logging
+import warnings
 
+import websockets
+from fastmcp import Client
+
+from autogen.io.websockets import IOWebsockets
 from autogen.mcp import create_toolkit
 
-from .agents import groupchat_manager, assistant_agent, execution_agent, user_proxy
+from .agents import assistant_agent, execution_agent, groupchat_manager, user_proxy
 from .services.calendar_service.mcp import mcp as calendar_service
-from autogen.io.websockets import IOWebsockets
 
+
+logger = logging.getLogger(__name__)
+warnings.filterwarnings("ignore")
 
 def on_connect(iostream: IOWebsockets) -> None:
-    print(f" - on_connect(): Connected to client using IOWebsockets {iostream}", flush=True)
-    print(" - on_connect(): Receiving message from client.", flush=True)
+    logger.info(f"[App] - on_connect(): Connected to client using IOWebsockets {iostream}")
+    logger.info("[App] - on_connect(): Receiving message from client.")
 
     async def get_websocket_input(prompt: str):
         return iostream.input()
 
     initial_msg = iostream.input()
     user_proxy.a_get_human_input = get_websocket_input
-    asyncio.run(chat(initial_msg, iostream))
+
+    try:
+        asyncio.run(chat(initial_msg, iostream))
+    except websockets.exceptions.ConnectionClosedOK as e:
+        logger.info(f"[App] - Client Disconnected (code={e.code})")
+    except Exception as e:
+        logger.error(f"[App] - Error in Chat Loop: {e}. Please try again.")
 
 
 async def chat(initial_msg: str, iostream: IOWebsockets):
@@ -38,9 +50,7 @@ async def chat(initial_msg: str, iostream: IOWebsockets):
                 groupchat_manager,
                 message=initial_msg,
             )
-            
+        except websockets.exceptions.ConnectionClosedOK as e:
+            logger.info(f"[App] - Client Disconnected (code={e.code})")
         except Exception as e:
-            print(f"🔹 Error: {e}. Please try again.")
-            await iostream.output(f"❌ Internal Error: {str(e)}")
-        finally:
-            await iostream.close()
+            logger.error(f"[App] - Error in Chat Loop: {e}. Please try again.")

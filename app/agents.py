@@ -1,12 +1,13 @@
-import os
-import asyncio
-from fastapi import WebSocket
+"""Agents Configuration for the AI Calendar Assistant."""
+
+from datetime import datetime
 
 from autogen import (
     AssistantAgent,
     ConversableAgent,
     GroupChat,
     GroupChatManager,
+    UserProxyAgent,
 )
 
 from .llms import llm_config
@@ -17,15 +18,16 @@ assistant_agent = ConversableAgent(
     name="AssistantAgent",
     system_message="""
     You are a helpful AI calendar assistant. Your role is to help users manage their 
-    calendar through natural language. You can view calendar events.
-    Never ask the user what day it is. Always use your tools to find the current datetime.
-    Use today's date to make judgements about what day it is tomorrow, for instance.
+    calendar through natural language. You can view calendar events. This conversation
+    started at """ + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S") + """.
+    Use the conversation start time to make judgements about referencial questions, such as "what day is it tomorrow?"
 
     Always use your tools rather than just describing what you would do. 
     Don't make assumptions about the user's schedule or preferences without asking first.
     When you are done, let the user know.
     
     - When using a tool, defer to the ExecutionAgent.
+    - When asked about relative time, always use a tool to get the current time.
     - The following context should be useful to you when you need to remember anything:{context}
     """,
     llm_config=llm_config,
@@ -40,14 +42,12 @@ execution_agent = AssistantAgent(
     llm_config=llm_config,
 )
 
-user_proxy = ConversableAgent(
+user_proxy = UserProxyAgent(
     name="UserProxy",
-    human_input_mode="ALWAYS",
-    llm_config=False,
     code_execution_config=False,
 )
 
-    # Create Group Chat with all agents
+# Create Group Chat with all agents
 groupchat = GroupChat(
     agents=[
         execution_agent,

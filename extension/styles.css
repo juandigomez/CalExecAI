@@ -51,17 +51,50 @@ h2 {
   position: absolute;
   top: 20px;
   right: 20px;
-  padding: 6px 12px;
-  border: none;
-  background: #94a3b8;
-  color: white;
-  border-radius: 12px;
+  width: 60px;
+  height: 30px;
+  background-color: #94a3b8;
+  border-radius: 50px;
   cursor: pointer;
-  font-size: 12px;
-  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
 }
-#theme-toggle:hover {
-  background: #64748b;
+
+#theme-toggle .icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+#theme-toggle .slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 26px;
+  height: 26px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+/* Opacity toggling based on theme */
+body.light-mode #theme-toggle .sun {
+  opacity: 0;
+}
+body.dark-mode #theme-toggle .moon {
+  opacity: 0;
+}
+
+/* Move the slider for dark mode */
+body.dark-mode #theme-toggle .slider {
+  transform: translateX(30px);
 }
 
 /* Chat */
@@ -249,4 +282,21 @@ body.dark-mode .inline-spinner {
 @keyframes blink {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
+}
+
+/* Calendar Link */
+.calendar-link {
+  display: inline-block;
+  padding: 10px 16px;
+  background-color: #007BFF;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-family: 'Segoe UI', sans-serif;
+  transition: background-color 0.3s;
+}
+
+.calendar-link:hover {
+  background-color: #0056b3;
 }

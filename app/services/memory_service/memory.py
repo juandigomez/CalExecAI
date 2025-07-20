@@ -1,11 +1,20 @@
+"""Memory Logging Service."""
+
+import logging
 import os
+import warnings
+
+from typing import Any, Union
 
 from dotenv import load_dotenv
-from typing import Any, Union
 from mem0 import MemoryClient
+
 from autogen import ConversableAgent
 
+logger = logging.getLogger(__name__)
 load_dotenv()
+
+warnings.filterwarnings("ignore")
 
 class MemoryService:
     _instance = None
@@ -15,12 +24,13 @@ class MemoryService:
 
     def retreive_conversation_history(self,agent: ConversableAgent, messages: list[dict[str, Any]]) -> None:  
         try:
+            logger.info(f"[MemoryService] - Retrieving conversation history for {agent.name}")
             relevant_memories = self.memory_client.search(messages[len(messages) - 1]["content"], user_id="user")
             flatten_relevant_memories = "\n".join([m["memory"] for m in relevant_memories])
 
             agent.update_system_message(agent.system_message.format(context=flatten_relevant_memories))
         except Exception as e:
-            print(f"Error retreiving conversation history: {e}")
+            logger.error(f"[MemoryService] - Error retreiving conversation history: {e}")
 
     def log_conversation_to_mem0(self, message: Union[str, list[dict[str, Any]]]) -> str:
         if isinstance(message, list):
@@ -31,12 +41,13 @@ class MemoryService:
             role = "user"
         
         try:
+            logger.info(f"[MemoryService] Logging conversation to mem0 for {role}")
             self.memory_client.add(
                 messages=[{"role": role, "content": msg_text}],
                 user_id="user"
             )
         except Exception as e:
-            print(f"Error logging conversation to mem0: {e}")
+            logger.error(f"[MemoryService] - Error logging conversation to mem0: {e}")
         
         return message
 
