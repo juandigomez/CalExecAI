@@ -13,27 +13,9 @@ from pydantic import BaseModel
 from autogen.io.websockets import IOWebsockets
 
 from app.main import on_connect
+from app.services.logging.logger import Logger, LogEntry
 
-def setup_logging():
-    if not os.path.exists("app/logs"):
-        os.makedirs("app/logs")
-    
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler("app/logs/server.log", mode="w"),
-            logging.StreamHandler()
-        ]
-    )
-    warnings.filterwarnings("ignore")
-
-setup_logging()
-
-class LogEntry(BaseModel):
-    message: str
-    level: str = "info"
-
+Logger.setup_logging()
 
 @asynccontextmanager
 async def run_websocket_server(_: FastAPI):
