@@ -37,7 +37,7 @@ A console-based AI calendar assistant built with Autogen that helps manage your 
 ## Usage
 Run the assistant with:
 ```
-uvicorn api.server:app --reload --host 0.0.0.0 --port 8000
+uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Configuration

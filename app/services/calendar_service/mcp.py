@@ -116,6 +116,28 @@ def create_event(event: CalendarEvent) -> CalendarEvent:
     logger.info(f"[MCP] - Creating Event: {created}")
     return CalendarEvent(**created)
 
+@mcp.tool
+def delete_event(event_id: str) -> None:
+    """Delete an event.
+
+    Args:
+        event_id: ID of the event to delete
+
+    Returns:
+        Calendar event object
+    """
+
+    service = calendar_sdk.resource
+
+    # Call the Calendar API
+    try:
+        service.events().delete(calendarId="primary", eventId=event_id).execute()
+        logger.info(f"[MCP] - Deleted Event: {event_id}")
+    except Exception as e:
+        logger.error(f"[MCP] - Error deleting event: {event_id}")
+        logger.error(f"[MCP] - {e}")
+        raise e
+
 
 if __name__ == "__main__":
     mcp.run()
