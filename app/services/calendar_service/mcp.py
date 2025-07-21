@@ -2,15 +2,14 @@
 
 import datetime
 import logging
-import warnings
 
 from fastmcp import FastMCP
 
 from .sdk import CalendarSDK
 from .models import CalendarEvent
 
+
 logger = logging.getLogger(__name__)
-warnings.filterwarnings("ignore")
 
 mcp = FastMCP(name="Calendar Management Service")
 

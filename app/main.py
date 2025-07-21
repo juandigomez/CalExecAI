@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import warnings
 
 import websockets
 from fastmcp import Client
@@ -15,7 +14,6 @@ from .services.calendar_service.mcp import mcp as calendar_service
 
 
 logger = logging.getLogger(__name__)
-warnings.filterwarnings("ignore")
 
 def on_connect(iostream: IOWebsockets) -> None:
     logger.info(f"[App] - on_connect(): Connected to client using IOWebsockets {iostream}")

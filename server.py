@@ -1,8 +1,6 @@
 """Extension Server Calling Calendar Service Entry Point."""
 
-import os
 import logging
-import warnings
 import websockets
 from contextlib import asynccontextmanager
 
