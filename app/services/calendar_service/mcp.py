@@ -18,7 +18,8 @@ calendar_sdk = CalendarSDK(
     "token.json",
     scopes=[
         "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/calendar.events"
+        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/userinfo.profile"
     ]
 )
 
@@ -83,7 +84,7 @@ def get_events_between_dates(start_time_str: str, end_time_str: str):
         )
         .execute()
     ).get("items", [])
-    logger.info(f"[MCP] - Getting Events Between Dates: {events}")
+    logger.info(f"[MCP] - Getting Events Between Dates: {start_time} - {end_time}")
     return [CalendarEvent(**event).model_dump_json() for event in events]
 
 @mcp.tool
@@ -112,7 +113,7 @@ def create_event(event: CalendarEvent) -> CalendarEvent:
         calendarId="primary", 
         body=event.model_dump(exclude_none=True, exclude_defaults=True)
     ).execute()
-    logger.info(f"[MCP] - Creating Event: {created}")
+    logger.info(f"[MCP] - Creating Event: {event.summary}")
     return CalendarEvent(**created)
 
 @mcp.tool
@@ -158,7 +159,7 @@ def update_event(event_id: str,event: CalendarEvent) -> CalendarEvent:
             eventId=event_id, 
             body=event.model_dump(exclude_none=True, exclude_defaults=True)
         ).execute()
-        logger.info(f"[MCP] - Updated Event: {updated}")
+        logger.info(f"[MCP] - Updated Event: {event.summary}")
         return CalendarEvent(**updated)
     except Exception as e:
         logger.error(f"[MCP] - Error updating event: {event_id}")
