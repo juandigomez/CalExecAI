@@ -38,10 +38,14 @@ ws.onmessage = (event) => {
           .replace(/\\"/g, '"')
           .replace(/\\\\/g, "\\");
 
-        const eventData = JSON.parse(jsonString);
+        const jsonChar = jsonString.trim().startsWith('{') || jsonString.trim().startsWith('[');
 
-        if (eventData.htmlLink) {
-          pendingEventLink = eventData.htmlLink;
+        if (jsonChar) {
+          const eventData = JSON.parse(jsonString);
+
+          if (eventData.htmlLink) {
+            pendingEventLink = eventData.htmlLink;
+          }
         }
       }
     }
@@ -68,6 +72,7 @@ ws.onmessage = (event) => {
     }
 
   } catch (error) {
+    console.log("Raw WebSocket data:", event.data);
     logToServer("Failed to parse WebSocket message: " + error, "error");
   }
 };
