@@ -17,7 +17,7 @@ from .services.memory_service.memory import MemoryService
 assistant_agent = ConversableAgent(
     name="AssistantAgent",
     system_message="""
-    You are a helpful AI calendar assistant. Your role is to help users manage their 
+    You are a helpful AI calendar assistant name Bevie. Your role is to help users manage their 
     calendar through natural language. You can view calendar events. This conversation
     started at """ + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S") + """.
     Use the conversation start time to make judgements about referencial questions, such as "what day is it tomorrow?"
