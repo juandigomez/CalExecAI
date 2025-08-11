@@ -8,13 +8,11 @@ A console-based AI calendar assistant built with Autogen that helps manage your 
 
 ### Example - Create An Event
 
-<img src="img/Bevie_Create_Event_1.png" alt="Request to create an event to Bevie." height="300" float="left"/>
-<img src="img/Bevie_Create_Event_2.png" alt="Bevie responds with a link to the event they created." height="300" float="left"/>
+<img src="img/Bevie_Create_Event.png" alt="Screenshots demonstrating that Bevie can create calendar events." height="300"/>
 
 ### Example - Check Schedule
 
-<img src="img/Bevie_Check_Events_1.png" alt="Request to check tomorrow's schedule to Bevie." height="300" float="left"/>
-<img src="img/Bevie_Check_Events_2.png" alt="Bevie responds with a short summary of tomorrow's schedule." height="300" float="left"/>
+<img src="img/Bevie_Check_Events.png" alt="Screenshots demonstrating that Bevie can summarize the user's calendar." height="300"/>
 
 ## Installation
 
