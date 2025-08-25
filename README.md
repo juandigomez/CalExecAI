@@ -1,6 +1,6 @@
 # AI Calendar Assistant with Autogen
 
-A console-based AI calendar assistant built with Autogen that helps manage your schedule through natural language interactions.
+An AI calendar assistant built with Autogen that helps manage your schedule through natural language interactions.
 
 ## Features
 - Natural language processing for CRUD calendar operations
